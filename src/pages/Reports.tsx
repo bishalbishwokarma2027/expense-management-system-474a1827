@@ -84,6 +84,34 @@ export default function Reports() {
     ? `${MONTHS[Number(selectedMonth)]} ${selectedYear}`
     : `Year ${selectedYear}`;
 
+  if (showReportForm) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => setShowReportForm(false)} className="gap-1.5">
+              <ArrowLeft className="h-4 w-4" /> Back
+            </Button>
+            <div>
+              <h1 className="font-heading text-2xl font-bold text-foreground">Report Form</h1>
+              <p className="text-sm text-muted-foreground">{periodLabel}</p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowNepaliDates(!showNepaliDates)}
+            className="gap-1.5"
+          >
+            <Globe className="h-3.5 w-3.5" />
+            {showNepaliDates ? "Hide Nepali Dates" : "Show Nepali Dates"}
+          </Button>
+        </div>
+        <ReportFormView transactions={filteredTx} periodLabel={periodLabel} showNepaliDates={showNepaliDates} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
