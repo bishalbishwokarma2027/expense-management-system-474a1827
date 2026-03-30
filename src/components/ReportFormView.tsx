@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { Transaction, formatCurrency, formatDate, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/store";
 import { formatNepaliDateFromISO } from "@/lib/nepali-date";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { ArrowDownRight, ArrowUpRight, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -28,136 +27,174 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
   const totalExpense = expenses.reduce((s, t) => s + t.amount, 0);
   const netBalance = totalIncome - totalExpense;
 
+  const colSpan = showNepaliDates ? 6 : 5;
+
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 print:space-y-4">
-      {/* Report Header */}
-      <div className="glass-card p-6 text-center border-b-2 border-primary/20">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <FileText className="h-6 w-6 text-primary" />
-          <h2 className="font-heading text-xl font-bold text-foreground">Financial Report</h2>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-4xl mx-auto"
+    >
+      {/* White paper container */}
+      <div className="bg-white text-gray-900 rounded-lg shadow-2xl overflow-hidden" style={{ minHeight: "800px" }}>
+        
+        {/* Paper Header */}
+        <div className="border-b-2 border-gray-200 px-10 py-8">
+          <div className="flex items-center justify-center gap-3 mb-1">
+            <FileText className="h-7 w-7 text-blue-600" />
+            <h2 className="text-2xl font-bold tracking-tight text-gray-900">Financial Report</h2>
+          </div>
+          <p className="text-center text-sm text-gray-500 mt-1">{periodLabel}</p>
+
+          {/* Summary strip */}
+          <div className="mt-6 grid grid-cols-3 gap-4 bg-gray-50 rounded-lg p-4 border border-gray-100">
+            <div className="text-center">
+              <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Total Income</p>
+              <p className="mt-1 text-lg font-bold text-emerald-600">{formatCurrency(totalIncome)}</p>
+            </div>
+            <div className="text-center border-l border-r border-gray-200">
+              <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Total Expenses</p>
+              <p className="mt-1 text-lg font-bold text-rose-600">{formatCurrency(totalExpense)}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Net Balance</p>
+              <p className={`mt-1 text-lg font-bold ${netBalance >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                {formatCurrency(netBalance)}
+              </p>
+            </div>
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground">{periodLabel}</p>
-        <div className="mt-4 flex justify-center gap-8 text-sm">
-          <div>
-            <p className="text-muted-foreground">Total Income</p>
-            <p className="font-heading font-bold text-income text-lg">{formatCurrency(totalIncome)}</p>
+
+        {/* Income Section */}
+        <div className="px-10 py-6">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-emerald-100">
+              <ArrowUpRight className="h-4 w-4 text-emerald-600" />
+            </div>
+            <h3 className="text-base font-bold text-gray-800">Income</h3>
+            <span className="text-xs text-gray-400 ml-1">({income.length} entries)</span>
+            <span className="ml-auto text-base font-bold text-emerald-600">{formatCurrency(totalIncome)}</span>
           </div>
-          <div className="border-l border-border pl-8">
-            <p className="text-muted-foreground">Total Expenses</p>
-            <p className="font-heading font-bold text-expense text-lg">{formatCurrency(totalExpense)}</p>
+
+          {income.length > 0 ? (
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b-2 border-gray-200">
+                  <th className="py-2.5 px-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 w-10">#</th>
+                  <th className="py-2.5 px-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Date</th>
+                  {showNepaliDates && <th className="py-2.5 px-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Nepali Date</th>}
+                  <th className="py-2.5 px-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Category</th>
+                  <th className="py-2.5 px-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Description</th>
+                  <th className="py-2.5 px-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {income.map((t, i) => (
+                  <tr key={t.id} className={`border-b border-gray-100 ${i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}`}>
+                    <td className="py-2.5 px-3 text-gray-400">{i + 1}</td>
+                    <td className="py-2.5 px-3 font-medium text-gray-700">{formatDate(t.date)}</td>
+                    {showNepaliDates && <td className="py-2.5 px-3 text-blue-600 text-xs">{formatNepaliDateFromISO(t.date)}</td>}
+                    <td className="py-2.5 px-3">
+                      <span className="flex items-center gap-1.5">
+                        <span>{getCategoryIcon(t.category, "income")}</span>
+                        <span className="text-gray-700">{t.category}</span>
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 text-gray-500">{t.description}</td>
+                    <td className="py-2.5 px-3 text-right font-semibold text-emerald-600">{formatCurrency(t.amount)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-gray-300 bg-emerald-50/50">
+                  <td colSpan={colSpan - 1} className="py-3 px-3 font-bold text-gray-700">Total Income</td>
+                  <td className="py-3 px-3 text-right font-bold text-emerald-600">{formatCurrency(totalIncome)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          ) : (
+            <div className="py-8 text-center text-gray-400 border border-dashed border-gray-200 rounded-lg">
+              No income recorded for this period
+            </div>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div className="mx-10 border-t border-gray-200" />
+
+        {/* Expense Section */}
+        <div className="px-10 py-6">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-rose-100">
+              <ArrowDownRight className="h-4 w-4 text-rose-600" />
+            </div>
+            <h3 className="text-base font-bold text-gray-800">Expenses</h3>
+            <span className="text-xs text-gray-400 ml-1">({expenses.length} entries)</span>
+            <span className="ml-auto text-base font-bold text-rose-600">{formatCurrency(totalExpense)}</span>
           </div>
-          <div className="border-l border-border pl-8">
-            <p className="text-muted-foreground">Net Balance</p>
-            <p className={`font-heading font-bold text-lg ${netBalance >= 0 ? "text-income" : "text-expense"}`}>
+
+          {expenses.length > 0 ? (
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b-2 border-gray-200">
+                  <th className="py-2.5 px-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 w-10">#</th>
+                  <th className="py-2.5 px-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Date</th>
+                  {showNepaliDates && <th className="py-2.5 px-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Nepali Date</th>}
+                  <th className="py-2.5 px-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Category</th>
+                  <th className="py-2.5 px-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Description</th>
+                  <th className="py-2.5 px-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {expenses.map((t, i) => (
+                  <tr key={t.id} className={`border-b border-gray-100 ${i % 2 === 0 ? "bg-white" : "bg-gray-50/60"}`}>
+                    <td className="py-2.5 px-3 text-gray-400">{i + 1}</td>
+                    <td className="py-2.5 px-3 font-medium text-gray-700">{formatDate(t.date)}</td>
+                    {showNepaliDates && <td className="py-2.5 px-3 text-blue-600 text-xs">{formatNepaliDateFromISO(t.date)}</td>}
+                    <td className="py-2.5 px-3">
+                      <span className="flex items-center gap-1.5">
+                        <span>{getCategoryIcon(t.category, "expense")}</span>
+                        <span className="text-gray-700">{t.category}</span>
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 text-gray-500">{t.description}</td>
+                    <td className="py-2.5 px-3 text-right font-semibold text-rose-600">{formatCurrency(t.amount)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-gray-300 bg-rose-50/50">
+                  <td colSpan={colSpan - 1} className="py-3 px-3 font-bold text-gray-700">Total Expenses</td>
+                  <td className="py-3 px-3 text-right font-bold text-rose-600">{formatCurrency(totalExpense)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          ) : (
+            <div className="py-8 text-center text-gray-400 border border-dashed border-gray-200 rounded-lg">
+              No expenses recorded for this period
+            </div>
+          )}
+        </div>
+
+        {/* Net Balance Footer */}
+        <div className="mx-10 border-t-2 border-gray-300" />
+        <div className="px-10 py-6 bg-gray-50">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-gray-400 font-semibold">Net Balance</p>
+              <p className="text-sm text-gray-500">{periodLabel}</p>
+            </div>
+            <span className={`text-2xl font-bold ${netBalance >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
               {formatCurrency(netBalance)}
-            </p>
+            </span>
           </div>
         </div>
-      </div>
 
-      {/* Income Table */}
-      <div className="glass-card overflow-hidden">
-        <div className="flex items-center gap-2 p-4 border-b border-border bg-income/5">
-          <ArrowUpRight className="h-4 w-4 text-income" />
-          <h3 className="font-heading font-semibold text-foreground">Income ({income.length} entries)</h3>
-          <span className="ml-auto font-heading font-bold text-income">{formatCurrency(totalIncome)}</span>
-        </div>
-        {income.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10">#</TableHead>
-                <TableHead>Date</TableHead>
-                {showNepaliDates && <TableHead>Nepali Date</TableHead>}
-                <TableHead>Category</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {income.map((t, i) => (
-                <TableRow key={t.id}>
-                  <TableCell className="text-muted-foreground">{i + 1}</TableCell>
-                  <TableCell className="font-medium">{formatDate(t.date)}</TableCell>
-                  {showNepaliDates && <TableCell className="text-primary text-xs">{formatNepaliDateFromISO(t.date)}</TableCell>}
-                  <TableCell>
-                    <span className="flex items-center gap-1.5">
-                      <span>{getCategoryIcon(t.category, "income")}</span>
-                      {t.category}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{t.description}</TableCell>
-                  <TableCell className="text-right font-heading font-semibold text-income">{formatCurrency(t.amount)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell colSpan={showNepaliDates ? 5 : 4} className="font-semibold">Total Income</TableCell>
-                <TableCell className="text-right font-heading font-bold text-income">{formatCurrency(totalIncome)}</TableCell>
-              </TableRow>
-            </TableFooter>
-          </Table>
-        ) : (
-          <p className="p-6 text-center text-sm text-muted-foreground">No income recorded</p>
-        )}
-      </div>
-
-      {/* Expense Table */}
-      <div className="glass-card overflow-hidden">
-        <div className="flex items-center gap-2 p-4 border-b border-border bg-expense/5">
-          <ArrowDownRight className="h-4 w-4 text-expense" />
-          <h3 className="font-heading font-semibold text-foreground">Expenses ({expenses.length} entries)</h3>
-          <span className="ml-auto font-heading font-bold text-expense">{formatCurrency(totalExpense)}</span>
-        </div>
-        {expenses.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10">#</TableHead>
-                <TableHead>Date</TableHead>
-                {showNepaliDates && <TableHead>Nepali Date</TableHead>}
-                <TableHead>Category</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {expenses.map((t, i) => (
-                <TableRow key={t.id}>
-                  <TableCell className="text-muted-foreground">{i + 1}</TableCell>
-                  <TableCell className="font-medium">{formatDate(t.date)}</TableCell>
-                  {showNepaliDates && <TableCell className="text-primary text-xs">{formatNepaliDateFromISO(t.date)}</TableCell>}
-                  <TableCell>
-                    <span className="flex items-center gap-1.5">
-                      <span>{getCategoryIcon(t.category, "expense")}</span>
-                      {t.category}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{t.description}</TableCell>
-                  <TableCell className="text-right font-heading font-semibold text-expense">{formatCurrency(t.amount)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell colSpan={showNepaliDates ? 5 : 4} className="font-semibold">Total Expenses</TableCell>
-                <TableCell className="text-right font-heading font-bold text-expense">{formatCurrency(totalExpense)}</TableCell>
-              </TableRow>
-            </TableFooter>
-          </Table>
-        ) : (
-          <p className="p-6 text-center text-sm text-muted-foreground">No expenses recorded</p>
-        )}
-      </div>
-
-      {/* Net Summary Footer */}
-      <div className="glass-card p-5">
-        <div className="flex items-center justify-between">
-          <span className="font-heading font-semibold text-foreground">Net Balance for {periodLabel}</span>
-          <span className={`font-heading text-xl font-bold ${netBalance >= 0 ? "text-income" : "text-expense"}`}>
-            {formatCurrency(netBalance)}
-          </span>
+        {/* Paper Footer */}
+        <div className="px-10 py-4 border-t border-gray-200 bg-gray-50/50">
+          <p className="text-xs text-gray-400 text-center">
+            Generated on {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })} — ExpenseIQ Financial Report
+          </p>
         </div>
       </div>
     </motion.div>
