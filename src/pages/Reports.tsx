@@ -3,7 +3,8 @@ import { useTransactions, formatCurrency, getMonthKey, EXPENSE_CATEGORIES, INCOM
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownRight, FileText, ArrowLeft, Globe } from "lucide-react";
+import ReportFormView from "@/components/ReportFormView";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -15,6 +16,8 @@ export default function Reports() {
   const [view, setView] = useState<"monthly" | "yearly">("monthly");
   const [selectedYear, setSelectedYear] = useState(String(new Date().getFullYear()));
   const [selectedMonth, setSelectedMonth] = useState(String(new Date().getMonth()));
+  const [showReportForm, setShowReportForm] = useState(false);
+  const [showNepaliDates, setShowNepaliDates] = useState(false);
 
   const years = useMemo(() => {
     const set = new Set(transactions.map((t) => new Date(t.date).getFullYear()));
@@ -81,6 +84,34 @@ export default function Reports() {
     ? `${MONTHS[Number(selectedMonth)]} ${selectedYear}`
     : `Year ${selectedYear}`;
 
+  if (showReportForm) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => setShowReportForm(false)} className="gap-1.5">
+              <ArrowLeft className="h-4 w-4" /> Back
+            </Button>
+            <div>
+              <h1 className="font-heading text-2xl font-bold text-foreground">Report Form</h1>
+              <p className="text-sm text-muted-foreground">{periodLabel}</p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowNepaliDates(!showNepaliDates)}
+            className="gap-1.5"
+          >
+            <Globe className="h-3.5 w-3.5" />
+            {showNepaliDates ? "Hide Nepali Dates" : "Show Nepali Dates"}
+          </Button>
+        </div>
+        <ReportFormView transactions={filteredTx} periodLabel={periodLabel} showNepaliDates={showNepaliDates} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -130,6 +161,15 @@ export default function Reports() {
               ))}
             </SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowReportForm(true)}
+            className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+          >
+            <FileText className="h-4 w-4" />
+            In Report Form
+          </Button>
         </div>
       </div>
 
