@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export type TransactionType = "income" | "expense";
 
@@ -43,19 +44,6 @@ export const INCOME_CATEGORIES = [
   { name: "Other", icon: "💵", color: "hsl(0, 0%, 50%)" },
 ];
 
-function loadFromStorage<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function saveToStorage<T>(key: string, data: T) {
-  localStorage.setItem(key, JSON.stringify(data));
-}
-
 // Custom event for cross-component reactivity
 const STORAGE_EVENT = "expense-tracker-update";
 
@@ -63,38 +51,59 @@ function emitUpdate() {
   window.dispatchEvent(new CustomEvent(STORAGE_EVENT));
 }
 
+function mapRow(row: { id: string; type: string; amount: number; category: string; description: string; date: string; created_at: string }): Transaction {
+  return {
+    id: row.id,
+    type: row.type as TransactionType,
+    amount: Number(row.amount),
+    category: row.category,
+    description: row.description,
+    date: row.date,
+    createdAt: row.created_at,
+  };
+}
+
 export function useTransactions() {
-  const [transactions, setTransactions] = useState<Transaction[]>(() =>
-    loadFromStorage("transactions", [])
-  );
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+  const fetchTransactions = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (!error && data) {
+      setTransactions(data.map(mapRow));
+    }
+  }, []);
 
   useEffect(() => {
-    const handler = () => {
-      setTransactions(loadFromStorage("transactions", []));
-    };
+    fetchTransactions();
+    const handler = () => fetchTransactions();
     window.addEventListener(STORAGE_EVENT, handler);
     return () => window.removeEventListener(STORAGE_EVENT, handler);
+  }, [fetchTransactions]);
+
+  const addTransaction = useCallback(async (t: Omit<Transaction, "id" | "createdAt">) => {
+    const { data, error } = await supabase
+      .from("transactions")
+      .insert({
+        type: t.type,
+        amount: t.amount,
+        category: t.category,
+        description: t.description || t.category,
+        date: t.date,
+      })
+      .select()
+      .single();
+    if (!error && data) {
+      emitUpdate();
+      return mapRow(data);
+    }
+    return null;
   }, []);
 
-  const addTransaction = useCallback((t: Omit<Transaction, "id" | "createdAt">) => {
-    const newT: Transaction = {
-      ...t,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-    };
-    const updated = [newT, ...loadFromStorage<Transaction[]>("transactions", [])];
-    saveToStorage("transactions", updated);
-    setTransactions(updated);
-    emitUpdate();
-    return newT;
-  }, []);
-
-  const deleteTransaction = useCallback((id: string) => {
-    const updated = loadFromStorage<Transaction[]>("transactions", []).filter(
-      (t) => t.id !== id
-    );
-    saveToStorage("transactions", updated);
-    setTransactions(updated);
+  const deleteTransaction = useCallback(async (id: string) => {
+    await supabase.from("transactions").delete().eq("id", id);
     emitUpdate();
   }, []);
 
@@ -102,30 +111,46 @@ export function useTransactions() {
 }
 
 export function useBudgets() {
-  const [budgets, setBudgets] = useState<Budget[]>(() =>
-    loadFromStorage("budgets", [])
-  );
+  const [budgets, setBudgets] = useState<Budget[]>([]);
 
-  useEffect(() => {
-    const handler = () => setBudgets(loadFromStorage("budgets", []));
-    window.addEventListener(STORAGE_EVENT, handler);
-    return () => window.removeEventListener(STORAGE_EVENT, handler);
+  const fetchBudgets = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("budgets")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (!error && data) {
+      setBudgets(
+        data.map((row) => ({
+          id: row.id,
+          category: row.category,
+          limit: Number(row.limit),
+          month: row.month,
+        }))
+      );
+    }
   }, []);
 
-  const setBudget = useCallback((category: string, limit: number, month: string) => {
-    const current = loadFromStorage<Budget[]>("budgets", []);
-    const existing = current.findIndex(
-      (b) => b.category === category && b.month === month
-    );
-    let updated: Budget[];
-    if (existing >= 0) {
-      updated = [...current];
-      updated[existing] = { ...updated[existing], limit };
+  useEffect(() => {
+    fetchBudgets();
+    const handler = () => fetchBudgets();
+    window.addEventListener(STORAGE_EVENT, handler);
+    return () => window.removeEventListener(STORAGE_EVENT, handler);
+  }, [fetchBudgets]);
+
+  const setBudget = useCallback(async (category: string, limit: number, month: string) => {
+    // Check if budget exists for this category+month
+    const { data: existing } = await supabase
+      .from("budgets")
+      .select("id")
+      .eq("category", category)
+      .eq("month", month)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase.from("budgets").update({ limit }).eq("id", existing.id);
     } else {
-      updated = [...current, { id: crypto.randomUUID(), category, limit, month }];
+      await supabase.from("budgets").insert({ category, limit, month });
     }
-    saveToStorage("budgets", updated);
-    setBudgets(updated);
     emitUpdate();
   }, []);
 
