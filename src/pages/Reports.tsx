@@ -161,6 +161,15 @@ export default function Reports() {
               ))}
             </SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowReportForm(true)}
+            className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+          >
+            <FileText className="h-4 w-4" />
+            In Report Form
+          </Button>
         </div>
       </div>
 
