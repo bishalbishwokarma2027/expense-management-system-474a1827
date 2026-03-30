@@ -1,13 +1,20 @@
 import { useState, useMemo } from "react";
 import { useTransactions, formatCurrency, getMonthKey, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/store";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line } from "recharts";
+import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownRight } from "lucide-react";
+
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
 
 export default function Reports() {
   const { transactions } = useTransactions();
   const [view, setView] = useState<"monthly" | "yearly">("monthly");
   const [selectedYear, setSelectedYear] = useState(String(new Date().getFullYear()));
+  const [selectedMonth, setSelectedMonth] = useState(String(new Date().getMonth()));
 
   const years = useMemo(() => {
     const set = new Set(transactions.map((t) => new Date(t.date).getFullYear()));
@@ -15,58 +22,104 @@ export default function Reports() {
     return Array.from(set).sort((a, b) => b - a);
   }, [transactions]);
 
-  const monthlyData = useMemo(() => {
-    const months = Array.from({ length: 12 }, (_, i) => {
-      const d = new Date(Number(selectedYear), i);
-      const key = getMonthKey(d);
-      const label = d.toLocaleDateString("en-IN", { month: "short" });
-      const monthTx = transactions.filter((t) => getMonthKey(t.date) === key);
-      const income = monthTx.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
-      const expense = monthTx.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
-      return { month: label, income, expense, savings: income - expense };
-    });
-    return months;
-  }, [transactions, selectedYear]);
+  const filteredTx = useMemo(() => {
+    if (view === "yearly") {
+      return transactions.filter((t) => new Date(t.date).getFullYear() === Number(selectedYear));
+    }
+    const key = `${selectedYear}-${String(Number(selectedMonth) + 1).padStart(2, "0")}`;
+    return transactions.filter((t) => getMonthKey(t.date) === key);
+  }, [transactions, view, selectedYear, selectedMonth]);
 
-  const yearlyTotals = useMemo(() => {
-    const yearTx = transactions.filter((t) => new Date(t.date).getFullYear() === Number(selectedYear));
-    const income = yearTx.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
-    const expense = yearTx.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
-    return { income, expense, savings: income - expense };
-  }, [transactions, selectedYear]);
+  const income = filteredTx.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
+  const expense = filteredTx.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+  const savings = income - expense;
+  const savingsRate = income > 0 ? ((savings / income) * 100).toFixed(1) : "0.0";
 
-  const categoryBreakdown = useMemo(() => {
-    const yearTx = transactions.filter(
-      (t) => t.type === "expense" && new Date(t.date).getFullYear() === Number(selectedYear)
-    );
-    return EXPENSE_CATEGORIES.map((cat) => ({
+  const expenseBreakdown = useMemo(() => {
+    const expTx = filteredTx.filter((t) => t.type === "expense");
+    const allCats = EXPENSE_CATEGORIES.map((cat) => ({
       ...cat,
-      total: yearTx.filter((t) => t.category === cat.name).reduce((s, t) => s + t.amount, 0),
-    }))
-      .filter((c) => c.total > 0)
-      .sort((a, b) => b.total - a.total);
-  }, [transactions, selectedYear]);
+      total: expTx.filter((t) => t.category === cat.name).reduce((s, t) => s + t.amount, 0),
+      count: expTx.filter((t) => t.category === cat.name).length,
+    }));
+    // Include custom categories
+    const knownNames = new Set(EXPENSE_CATEGORIES.map((c) => c.name));
+    const customCats = expTx
+      .filter((t) => !knownNames.has(t.category))
+      .reduce((acc, t) => {
+        const existing = acc.find((c) => c.name === t.category);
+        if (existing) { existing.total += t.amount; existing.count++; }
+        else acc.push({ name: t.category, icon: "📦", color: "hsl(0, 0%, 50%)", total: t.amount, count: 1 });
+        return acc;
+      }, [] as { name: string; icon: string; color: string; total: number; count: number }[]);
+    return [...allCats, ...customCats].filter((c) => c.total > 0).sort((a, b) => b.total - a.total);
+  }, [filteredTx]);
 
-  const topIncomeSource = useMemo(() => {
-    const yearTx = transactions.filter(
-      (t) => t.type === "income" && new Date(t.date).getFullYear() === Number(selectedYear)
-    );
-    return INCOME_CATEGORIES.map((cat) => ({
+  const incomeBreakdown = useMemo(() => {
+    const incTx = filteredTx.filter((t) => t.type === "income");
+    const allCats = INCOME_CATEGORIES.map((cat) => ({
       ...cat,
-      total: yearTx.filter((t) => t.category === cat.name).reduce((s, t) => s + t.amount, 0),
-    }))
-      .filter((c) => c.total > 0)
-      .sort((a, b) => b.total - a.total);
-  }, [transactions, selectedYear]);
+      total: incTx.filter((t) => t.category === cat.name).reduce((s, t) => s + t.amount, 0),
+      count: incTx.filter((t) => t.category === cat.name).length,
+    }));
+    const knownNames = new Set(INCOME_CATEGORIES.map((c) => c.name));
+    const customCats = incTx
+      .filter((t) => !knownNames.has(t.category))
+      .reduce((acc, t) => {
+        const existing = acc.find((c) => c.name === t.category);
+        if (existing) { existing.total += t.amount; existing.count++; }
+        else acc.push({ name: t.category, icon: "💵", color: "hsl(160, 84%, 39%)", total: t.amount, count: 1 });
+        return acc;
+      }, [] as { name: string; icon: string; color: string; total: number; count: number }[]);
+    return [...allCats, ...customCats].filter((c) => c.total > 0).sort((a, b) => b.total - a.total);
+  }, [filteredTx]);
+
+  const topExpense = expenseBreakdown[0];
+  const topIncome = incomeBreakdown[0];
+
+  const periodLabel = view === "monthly"
+    ? `${MONTHS[Number(selectedMonth)]} ${selectedYear}`
+    : `Year ${selectedYear}`;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="font-heading text-2xl font-bold text-foreground">Reports</h1>
-          <p className="text-sm text-muted-foreground">Detailed financial analysis</p>
+          <p className="text-sm text-muted-foreground">{periodLabel} — Financial Summary</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <div className="flex rounded-lg border border-border overflow-hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={view === "monthly" ? "bg-primary/10 text-primary rounded-none" : "rounded-none text-muted-foreground"}
+              onClick={() => setView("monthly")}
+            >
+              Monthly
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={view === "yearly" ? "bg-primary/10 text-primary rounded-none" : "rounded-none text-muted-foreground"}
+              onClick={() => setView("yearly")}
+            >
+              Yearly
+            </Button>
+          </div>
+          {view === "monthly" && (
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-[130px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MONTHS.map((m, i) => (
+                  <SelectItem key={i} value={String(i)}>{m}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Select value={selectedYear} onValueChange={setSelectedYear}>
             <SelectTrigger className="w-[100px]">
               <SelectValue />
@@ -80,126 +133,183 @@ export default function Reports() {
         </div>
       </div>
 
-      {/* Year summary */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: "Total Income", value: yearlyTotals.income, cls: "text-income" },
-          { label: "Total Expenses", value: yearlyTotals.expense, cls: "text-expense" },
-          { label: "Net Savings", value: yearlyTotals.savings, cls: yearlyTotals.savings >= 0 ? "text-income" : "text-expense" },
+          { label: "Total Income", value: income, icon: TrendingUp, cls: "text-income", bgCls: "bg-income/10 text-income" },
+          { label: "Total Expenses", value: expense, icon: TrendingDown, cls: "text-expense", bgCls: "bg-expense/10 text-expense" },
+          { label: "Net Savings", value: savings, icon: Wallet, cls: savings >= 0 ? "text-income" : "text-expense", bgCls: savings >= 0 ? "bg-income/10 text-income" : "bg-expense/10 text-expense" },
+          { label: "Savings Rate", value: null, icon: ArrowUpRight, cls: "text-primary", bgCls: "bg-primary/10 text-primary", displayValue: `${savingsRate}%` },
         ].map((item, i) => (
           <motion.div
             key={item.label}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className="glass-card p-5 text-center"
+            transition={{ delay: i * 0.08 }}
+            className="glass-card p-5"
           >
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">{item.label}</p>
-            <p className={`mt-1 font-heading text-xl font-bold ${item.cls}`}>
-              {formatCurrency(item.value)}
-            </p>
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{item.label}</p>
+                <p className={`mt-1 font-heading text-xl font-bold ${item.cls}`}>
+                  {item.displayValue ?? formatCurrency(item.value!)}
+                </p>
+              </div>
+              <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${item.bgCls}`}>
+                <item.icon className="h-5 w-5" />
+              </div>
+            </div>
           </motion.div>
         ))}
       </div>
 
-      {/* Monthly chart */}
-      <div className="glass-card p-5">
-        <h2 className="mb-4 font-heading text-sm font-semibold">Monthly Income vs Expenses — {selectedYear}</h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={monthlyData} barGap={2}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 16%)" />
-            <XAxis dataKey="month" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 11 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
-            <Tooltip content={({ payload, label }) => {
-              if (!payload?.length) return null;
-              return (
-                <div className="glass-card p-3 text-xs space-y-1">
-                  <p className="font-heading font-semibold">{label}</p>
-                  {payload.map((p) => (
-                    <p key={p.dataKey as string}>
-                      <span className="capitalize">{p.dataKey as string}: </span>
-                      <span className="font-semibold">{formatCurrency(p.value as number)}</span>
-                    </p>
-                  ))}
-                </div>
-              );
-            }} />
-            <Bar dataKey="income" fill="hsl(160, 84%, 39%)" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="expense" fill="hsl(0, 72%, 58%)" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+      {/* Quick Insights */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="glass-card p-5">
+          <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-3">Highest Expense</h3>
+          {topExpense ? (
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{topExpense.icon}</span>
+              <div className="flex-1">
+                <p className="font-heading font-semibold text-foreground">{topExpense.name}</p>
+                <p className="text-xs text-muted-foreground">{topExpense.count} transaction{topExpense.count > 1 ? "s" : ""}</p>
+              </div>
+              <p className="font-heading font-bold text-expense">{formatCurrency(topExpense.total)}</p>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No expenses recorded</p>
+          )}
+        </motion.div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="glass-card p-5">
+          <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-3">Top Income Source</h3>
+          {topIncome ? (
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{topIncome.icon}</span>
+              <div className="flex-1">
+                <p className="font-heading font-semibold text-foreground">{topIncome.name}</p>
+                <p className="text-xs text-muted-foreground">{topIncome.count} transaction{topIncome.count > 1 ? "s" : ""}</p>
+              </div>
+              <p className="font-heading font-bold text-income">{formatCurrency(topIncome.total)}</p>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No income recorded</p>
+          )}
+        </motion.div>
       </div>
 
-      {/* Savings trend */}
-      <div className="glass-card p-5">
-        <h2 className="mb-4 font-heading text-sm font-semibold">Savings Trend</h2>
-        <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={monthlyData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 16%)" />
-            <XAxis dataKey="month" tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 11 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: "hsl(215, 15%, 50%)", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
-            <Tooltip content={({ payload, label }) => {
-              if (!payload?.length) return null;
-              return (
-                <div className="glass-card p-3 text-xs">
-                  <p className="font-heading font-semibold">{label}</p>
-                  <p>Savings: <span className="font-semibold">{formatCurrency(payload[0].value as number)}</span></p>
-                </div>
-              );
-            }} />
-            <Line type="monotone" dataKey="savings" stroke="hsl(217, 91%, 60%)" strokeWidth={2} dot={{ fill: "hsl(217, 91%, 60%)", r: 3 }} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Category breakdown */}
+      {/* Category Breakdowns */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="glass-card p-5">
-          <h2 className="mb-4 font-heading text-sm font-semibold">Expense Categories</h2>
+          <h2 className="mb-4 font-heading text-sm font-semibold flex items-center gap-2">
+            <ArrowDownRight className="h-4 w-4 text-expense" /> Expense Breakdown
+          </h2>
           <div className="space-y-3">
-            {categoryBreakdown.length === 0 && (
+            {expenseBreakdown.length === 0 && (
               <p className="text-sm text-muted-foreground py-6 text-center">No expenses recorded</p>
             )}
-            {categoryBreakdown.map((c) => {
-              const pct = yearlyTotals.expense > 0 ? (c.total / yearlyTotals.expense) * 100 : 0;
+            {expenseBreakdown.map((c, i) => {
+              const pct = expense > 0 ? (c.total / expense) * 100 : 0;
               return (
-                <div key={c.name} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span>{c.icon} {c.name}</span>
-                    <span className="text-muted-foreground">{formatCurrency(c.total)} ({pct.toFixed(1)}%)</span>
+                <motion.div
+                  key={c.name}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.04 }}
+                  className="space-y-1.5"
+                >
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2">
+                      <span>{c.icon}</span>
+                      <span className="font-medium text-foreground">{c.name}</span>
+                      <span className="text-xs text-muted-foreground">({c.count})</span>
+                    </span>
+                    <span className="font-heading font-semibold text-expense">{formatCurrency(c.total)}</span>
                   </div>
-                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: c.color }} />
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 0.6, delay: i * 0.04 }}
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: c.color }}
+                      />
+                    </div>
+                    <span className="text-xs text-muted-foreground w-12 text-right">{pct.toFixed(1)}%</span>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>
         </div>
 
         <div className="glass-card p-5">
-          <h2 className="mb-4 font-heading text-sm font-semibold">Income Sources</h2>
+          <h2 className="mb-4 font-heading text-sm font-semibold flex items-center gap-2">
+            <ArrowUpRight className="h-4 w-4 text-income" /> Income Breakdown
+          </h2>
           <div className="space-y-3">
-            {topIncomeSource.length === 0 && (
+            {incomeBreakdown.length === 0 && (
               <p className="text-sm text-muted-foreground py-6 text-center">No income recorded</p>
             )}
-            {topIncomeSource.map((c) => {
-              const pct = yearlyTotals.income > 0 ? (c.total / yearlyTotals.income) * 100 : 0;
+            {incomeBreakdown.map((c, i) => {
+              const pct = income > 0 ? (c.total / income) * 100 : 0;
               return (
-                <div key={c.name} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span>{c.icon} {c.name}</span>
-                    <span className="text-muted-foreground">{formatCurrency(c.total)} ({pct.toFixed(1)}%)</span>
+                <motion.div
+                  key={c.name}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.04 }}
+                  className="space-y-1.5"
+                >
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2">
+                      <span>{c.icon}</span>
+                      <span className="font-medium text-foreground">{c.name}</span>
+                      <span className="text-xs text-muted-foreground">({c.count})</span>
+                    </span>
+                    <span className="font-heading font-semibold text-income">{formatCurrency(c.total)}</span>
                   </div>
-                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: c.color }} />
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 0.6, delay: i * 0.04 }}
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: c.color }}
+                      />
+                    </div>
+                    <span className="text-xs text-muted-foreground w-12 text-right">{pct.toFixed(1)}%</span>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>
         </div>
       </div>
+
+      {/* Transaction count summary */}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="glass-card p-5">
+        <h2 className="mb-3 font-heading text-sm font-semibold">Period Summary</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+          <div>
+            <p className="text-2xl font-heading font-bold text-foreground">{filteredTx.length}</p>
+            <p className="text-xs text-muted-foreground">Total Transactions</p>
+          </div>
+          <div>
+            <p className="text-2xl font-heading font-bold text-income">{filteredTx.filter(t => t.type === "income").length}</p>
+            <p className="text-xs text-muted-foreground">Income Entries</p>
+          </div>
+          <div>
+            <p className="text-2xl font-heading font-bold text-expense">{filteredTx.filter(t => t.type === "expense").length}</p>
+            <p className="text-xs text-muted-foreground">Expense Entries</p>
+          </div>
+          <div>
+            <p className="text-2xl font-heading font-bold text-primary">{expenseBreakdown.length + incomeBreakdown.length}</p>
+            <p className="text-xs text-muted-foreground">Categories Used</p>
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 }

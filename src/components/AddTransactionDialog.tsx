@@ -13,6 +13,8 @@ export default function AddTransactionDialog() {
   const [type, setType] = useState<TransactionType>("expense");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
+  const [customCategory, setCustomCategory] = useState("");
+  const [useCustom, setUseCustom] = useState(false);
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const { addTransaction } = useTransactions();
@@ -26,22 +28,25 @@ export default function AddTransactionDialog() {
       toast.error("Please enter a valid amount");
       return;
     }
-    if (!category) {
-      toast.error("Please select a category");
+    const finalCategory = useCustom ? customCategory.trim() : category;
+    if (!finalCategory) {
+      toast.error("Please select or enter a category");
       return;
     }
 
     addTransaction({
       type,
       amount: numAmount,
-      category,
-      description: description.trim() || category,
+      category: finalCategory,
+      description: description.trim() || finalCategory,
       date: new Date(date).toISOString(),
     });
 
     toast.success(`${type === "income" ? "Income" : "Expense"} added successfully`);
     setAmount("");
     setCategory("");
+    setCustomCategory("");
+    setUseCustom(false);
     setDescription("");
     setDate(new Date().toISOString().split("T")[0]);
     setOpen(false);
@@ -65,7 +70,7 @@ export default function AddTransactionDialog() {
               type="button"
               variant={type === "expense" ? "default" : "outline"}
               className={type === "expense" ? "flex-1 bg-expense hover:bg-expense/90" : "flex-1"}
-              onClick={() => { setType("expense"); setCategory(""); }}
+              onClick={() => { setType("expense"); setCategory(""); setUseCustom(false); }}
             >
               Expense
             </Button>
@@ -73,7 +78,7 @@ export default function AddTransactionDialog() {
               type="button"
               variant={type === "income" ? "default" : "outline"}
               className={type === "income" ? "flex-1 bg-income hover:bg-income/90" : "flex-1"}
-              onClick={() => { setType("income"); setCategory(""); }}
+              onClick={() => { setType("income"); setCategory(""); setUseCustom(false); }}
             >
               Income
             </Button>
@@ -93,21 +98,39 @@ export default function AddTransactionDialog() {
           </div>
 
           <div className="space-y-2">
-            <Label>Category</Label>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((c) => (
-                  <SelectItem key={c.name} value={c.name}>
-                    <span className="flex items-center gap-2">
-                      {c.icon} {c.name}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center justify-between">
+              <Label>Category</Label>
+              <button
+                type="button"
+                onClick={() => { setUseCustom(!useCustom); setCategory(""); setCustomCategory(""); }}
+                className="text-xs text-primary hover:underline"
+              >
+                {useCustom ? "Choose from list" : "Type custom"}
+              </button>
+            </div>
+            {useCustom ? (
+              <Input
+                placeholder="Enter custom category..."
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                maxLength={40}
+              />
+            ) : (
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((c) => (
+                    <SelectItem key={c.name} value={c.name}>
+                      <span className="flex items-center gap-2">
+                        {c.icon} {c.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div className="space-y-2">
