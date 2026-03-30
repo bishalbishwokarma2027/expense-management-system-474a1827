@@ -3,7 +3,8 @@ import { useTransactions, formatCurrency, getMonthKey, EXPENSE_CATEGORIES, INCOM
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownRight, FileText, ArrowLeft, Globe } from "lucide-react";
+import ReportFormView from "@/components/ReportFormView";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -15,6 +16,8 @@ export default function Reports() {
   const [view, setView] = useState<"monthly" | "yearly">("monthly");
   const [selectedYear, setSelectedYear] = useState(String(new Date().getFullYear()));
   const [selectedMonth, setSelectedMonth] = useState(String(new Date().getMonth()));
+  const [showReportForm, setShowReportForm] = useState(false);
+  const [showNepaliDates, setShowNepaliDates] = useState(false);
 
   const years = useMemo(() => {
     const set = new Set(transactions.map((t) => new Date(t.date).getFullYear()));
