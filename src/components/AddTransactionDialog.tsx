@@ -21,7 +21,7 @@ export default function AddTransactionDialog() {
 
   const categories = type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const numAmount = parseFloat(amount);
     if (!numAmount || numAmount <= 0) {
@@ -34,7 +34,7 @@ export default function AddTransactionDialog() {
       return;
     }
 
-    addTransaction({
+    await addTransaction({
       type,
       amount: numAmount,
       category: finalCategory,
