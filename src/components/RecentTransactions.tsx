@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Trash2, TrendingUp, TrendingDown } from "lucide-react";
 import { useTransactions, formatCurrency, formatDate, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/store";
+import { formatNepaliDateFromISO } from "@/lib/nepali-date";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +44,7 @@ export default function RecentTransactions({ limit, showDelete = false }: Props)
               </p>
               <p className="text-xs text-muted-foreground">
                 {t.category} · {formatDate(t.date)}
+                <span className="text-primary/70 ml-1">· {formatNepaliDateFromISO(t.date)}</span>
               </p>
             </div>
             <div className="flex items-center gap-2">

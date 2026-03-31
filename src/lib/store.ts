@@ -154,7 +154,12 @@ export function useBudgets() {
     emitUpdate();
   }, []);
 
-  return { budgets, setBudget };
+  const deleteBudget = useCallback(async (category: string, month: string) => {
+    await supabase.from("budgets").delete().eq("category", category).eq("month", month);
+    emitUpdate();
+  }, []);
+
+  return { budgets, setBudget, deleteBudget };
 }
 
 // Helper functions
