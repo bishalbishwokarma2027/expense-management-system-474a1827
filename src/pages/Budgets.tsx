@@ -3,13 +3,13 @@ import { useTransactions, useBudgets, formatCurrency, getMonthKey, EXPENSE_CATEG
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { AlertTriangle, CheckCircle, Target } from "lucide-react";
+import { AlertTriangle, CheckCircle, Target, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export default function Budgets() {
   const { transactions } = useTransactions();
-  const { budgets, setBudget } = useBudgets();
+  const { budgets, setBudget, deleteBudget } = useBudgets();
   const currentMonth = getMonthKey(new Date());
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -35,6 +35,11 @@ export default function Budgets() {
     }
     setEditingCat(null);
     setEditValue("");
+  };
+
+  const handleDelete = async (catName: string) => {
+    await deleteBudget(catName, currentMonth);
+    toast.success(`Budget removed for ${catName}`);
   };
 
   return (
@@ -81,13 +86,36 @@ export default function Budgets() {
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium">{cat.icon} {cat.name}</span>
-              {cat.limit > 0 && (
-                cat.pct > 90 ? (
-                  <AlertTriangle className="h-4 w-4 text-expense" />
-                ) : (
-                  <CheckCircle className="h-4 w-4 text-income" />
-                )
-              )}
+              <div className="flex items-center gap-1">
+                {cat.limit > 0 && (
+                  <>
+                    {cat.pct > 90 ? (
+                      <AlertTriangle className="h-4 w-4 text-expense" />
+                    ) : (
+                      <CheckCircle className="h-4 w-4 text-income" />
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-primary"
+                      onClick={() => {
+                        setEditingCat(cat.name);
+                        setEditValue(String(cat.limit));
+                      }}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-expense"
+                      onClick={() => handleDelete(cat.name)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
 
             {cat.limit > 0 && (
@@ -123,20 +151,23 @@ export default function Budgets() {
                   className="h-8 text-sm"
                   autoFocus
                 />
-                <Button size="sm" className="h-8" onClick={() => handleSave(cat.name)}>Set</Button>
+                <Button size="sm" className="h-8" onClick={() => handleSave(cat.name)}>Save</Button>
+                <Button size="sm" variant="ghost" className="h-8" onClick={() => { setEditingCat(null); setEditValue(""); }}>Cancel</Button>
               </div>
             ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mt-2 h-7 text-xs text-muted-foreground"
-                onClick={() => {
-                  setEditingCat(cat.name);
-                  setEditValue(cat.limit > 0 ? String(cat.limit) : "");
-                }}
-              >
-                {cat.limit > 0 ? "Edit Budget" : "Set Budget"}
-              </Button>
+              !cat.limit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mt-2 h-7 text-xs text-muted-foreground"
+                  onClick={() => {
+                    setEditingCat(cat.name);
+                    setEditValue("");
+                  }}
+                >
+                  Set Budget
+                </Button>
+              )
             )}
           </motion.div>
         ))}

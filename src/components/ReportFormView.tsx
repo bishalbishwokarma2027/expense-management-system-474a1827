@@ -1,7 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useState, useRef, useCallback } from "react";
 import { Transaction, formatCurrency, formatDate, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/store";
 import { formatNepaliDateFromISO } from "@/lib/nepali-date";
-import { ArrowDownRight, ArrowUpRight, FileText } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, FileText, GripHorizontal } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface ReportFormViewProps {
@@ -29,6 +29,27 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
 
   const colSpan = showNepaliDates ? 6 : 5;
 
+  // Draggable state
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const dragging = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    dragging.current = true;
+    dragStart.current = { x: e.clientX - pos.x, y: e.clientY - pos.y };
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!dragging.current) return;
+      setPos({ x: ev.clientX - dragStart.current.x, y: ev.clientY - dragStart.current.y });
+    };
+    const onMouseUp = () => {
+      dragging.current = false;
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+  }, [pos]);
+
   const renderRow = (t: Transaction, i: number, type: "income" | "expense") => (
     <tr key={t.id} className={`border-b border-gray-100 ${i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}`}>
       <td className="py-1.5 px-2 text-gray-400 text-xs">{i + 1}</td>
@@ -50,8 +71,22 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
   const thClass = "py-2 px-2 text-left text-[11px] font-bold uppercase tracking-wider text-gray-600";
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl mx-auto">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-5xl mx-auto"
+      style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}
+    >
       <div className="bg-white text-gray-900 rounded-lg shadow-2xl overflow-hidden">
+
+        {/* Drag handle */}
+        <div
+          onMouseDown={onMouseDown}
+          className="flex items-center justify-center gap-2 py-1.5 bg-gray-100 cursor-grab active:cursor-grabbing select-none border-b border-gray-200"
+        >
+          <GripHorizontal className="h-4 w-4 text-gray-400" />
+          <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Drag to move</span>
+        </div>
 
         {/* Header */}
         <div className="border-b-2 border-gray-300 px-8 py-4 flex items-center justify-between">
@@ -81,7 +116,7 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
         </div>
 
         {/* Two-column tables */}
-        <div className="grid grid-cols-2 divide-x divide-gray-200" style={{ maxHeight: "calc(100vh - 220px)", overflow: "auto" }}>
+        <div className="grid grid-cols-2 divide-x divide-gray-200" style={{ maxHeight: "calc(100vh - 260px)", overflow: "auto" }}>
           
           {/* Income */}
           <div>
