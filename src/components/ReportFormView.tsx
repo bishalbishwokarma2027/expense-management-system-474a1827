@@ -1,54 +1,8 @@
-import { useMemo, useState, useRef, useCallback } from "react";
+import { useMemo } from "react";
 import { Transaction, formatCurrency, formatDate, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/store";
 import { formatNepaliDateFromISO } from "@/lib/nepali-date";
 import { ArrowDownRight, ArrowUpRight, FileText, GripHorizontal } from "lucide-react";
 import { motion } from "framer-motion";
-
-interface ReportFormViewProps {
-  transactions: Transaction[];
-  periodLabel: string;
-  showNepaliDates: boolean;
-}
-
-function getCategoryIcon(category: string, type: string): string {
-  const cats = type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
-  return cats.find((c) => c.name === category)?.icon ?? (type === "expense" ? "📦" : "💵");
-}
-
-export default function ReportFormView({ transactions, periodLabel, showNepaliDates }: ReportFormViewProps) {
-  const sorted = useMemo(
-    () => [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
-    [transactions]
-  );
-
-  const income = sorted.filter((t) => t.type === "income");
-  const expenses = sorted.filter((t) => t.type === "expense");
-  const totalIncome = income.reduce((s, t) => s + t.amount, 0);
-  const totalExpense = expenses.reduce((s, t) => s + t.amount, 0);
-  const netBalance = totalIncome - totalExpense;
-
-  const colSpan = showNepaliDates ? 6 : 5;
-
-  // Draggable state
-  const [pos, setPos] = useState({ x: 0, y: 0 });
-  const dragging = useRef(false);
-  const dragStart = useRef({ x: 0, y: 0 });
-
-  const onMouseDown = useCallback((e: React.MouseEvent) => {
-    dragging.current = true;
-    dragStart.current = { x: e.clientX - pos.x, y: e.clientY - pos.y };
-    const onMouseMove = (ev: MouseEvent) => {
-      if (!dragging.current) return;
-      setPos({ x: ev.clientX - dragStart.current.x, y: ev.clientY - dragStart.current.y });
-    };
-    const onMouseUp = () => {
-      dragging.current = false;
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    };
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-  }, [pos]);
 
   const renderRow = (t: Transaction, i: number, type: "income" | "expense") => (
     <tr key={t.id} className={`border-b border-gray-100 ${i % 2 === 0 ? "bg-white" : "bg-gray-50/50"}`}>
