@@ -95,7 +95,7 @@ export default function Transportation() {
       for (let d = 1; d <= daysCount; d++) {
         const amt = parseFloat(dailyAmounts[d] || "0");
         if (amt > 0) {
-          const dateStr = new Date(selectedYear, selectedMonth, d).toISOString();
+          const dateStr = toLocalDateStr(selectedYear, selectedMonth, d) + "T12:00:00";
           await addTransaction({
             type: "expense",
             amount: amt,
