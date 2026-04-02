@@ -21,6 +21,18 @@ function getDayName(year: number, month: number, day: number) {
   return new Date(year, month, day).toLocaleDateString("en-IN", { weekday: "short" });
 }
 
+// Create a stable YYYY-MM-DD string without timezone shifting
+function toLocalDateStr(year: number, month: number, day: number) {
+  return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+// Extract day from a date string, handling timezone correctly
+function getDayFromDate(dateStr: string): number {
+  // Parse the date string and extract the local day
+  const d = new Date(dateStr);
+  return d.getDate();
+}
+
 export default function Transportation() {
   const { transactions, addTransaction, deleteTransaction } = useTransactions();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
