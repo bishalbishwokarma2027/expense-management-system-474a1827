@@ -44,14 +44,12 @@ export default function Transportation() {
 
   // Get existing transportation transactions for this month
   const existingTransport = useMemo(() => {
-    const monthKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`;
-    return transactions.filter(
-      (t) =>
-        t.type === "expense" &&
-        t.category === "Transportation" &&
-        t.description.startsWith("Daily Transport") &&
-        t.date.startsWith(monthKey)
-    );
+    return transactions.filter((t) => {
+      if (t.type !== "expense" || t.category !== "Transportation" || !t.description.startsWith("Daily Transport")) return false;
+      // Check month/year using local date to avoid timezone issues
+      const d = new Date(t.date);
+      return d.getFullYear() === selectedYear && d.getMonth() === selectedMonth;
+    });
   }, [transactions, selectedYear, selectedMonth]);
 
   // Map day number to existing transaction
@@ -67,20 +65,12 @@ export default function Transportation() {
   // Initialize daily amounts from existing data when month changes
   useEffect(() => {
     const init: Record<number, string> = {};
-    const monthKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`;
-    const monthTransport = transactions.filter(
-      (t) =>
-        t.type === "expense" &&
-        t.category === "Transportation" &&
-        t.description.startsWith("Daily Transport") &&
-        t.date.startsWith(monthKey)
-    );
-    for (const t of monthTransport) {
+    for (const t of existingTransport) {
       const day = new Date(t.date).getDate();
       init[day] = String(t.amount);
     }
     setDailyAmounts(init);
-  }, [selectedYear, selectedMonth, transactions.length]);
+  }, [selectedYear, selectedMonth, existingTransport.length]);
 
   const totalMonthly = useMemo(() => {
     let total = 0;
