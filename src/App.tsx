@@ -8,6 +8,7 @@ import Dashboard from "@/pages/Dashboard";
 import Transactions from "@/pages/Transactions";
 import Reports from "@/pages/Reports";
 import Budgets from "@/pages/Budgets";
+import Transportation from "@/pages/Transportation";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
