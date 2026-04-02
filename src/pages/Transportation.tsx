@@ -21,6 +21,18 @@ function getDayName(year: number, month: number, day: number) {
   return new Date(year, month, day).toLocaleDateString("en-IN", { weekday: "short" });
 }
 
+// Create a stable YYYY-MM-DD string without timezone shifting
+function toLocalDateStr(year: number, month: number, day: number) {
+  return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+// Extract day from a date string, handling timezone correctly
+function getDayFromDate(dateStr: string): number {
+  // Parse the date string and extract the local day
+  const d = new Date(dateStr);
+  return d.getDate();
+}
+
 export default function Transportation() {
   const { transactions, addTransaction, deleteTransaction } = useTransactions();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -32,14 +44,12 @@ export default function Transportation() {
 
   // Get existing transportation transactions for this month
   const existingTransport = useMemo(() => {
-    const monthKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`;
-    return transactions.filter(
-      (t) =>
-        t.type === "expense" &&
-        t.category === "Transportation" &&
-        t.description.startsWith("Daily Transport") &&
-        t.date.startsWith(monthKey)
-    );
+    return transactions.filter((t) => {
+      if (t.type !== "expense" || t.category !== "Transportation" || !t.description.startsWith("Daily Transport")) return false;
+      // Check month/year using local date to avoid timezone issues
+      const d = new Date(t.date);
+      return d.getFullYear() === selectedYear && d.getMonth() === selectedMonth;
+    });
   }, [transactions, selectedYear, selectedMonth]);
 
   // Map day number to existing transaction
@@ -55,20 +65,12 @@ export default function Transportation() {
   // Initialize daily amounts from existing data when month changes
   useEffect(() => {
     const init: Record<number, string> = {};
-    const monthKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`;
-    const monthTransport = transactions.filter(
-      (t) =>
-        t.type === "expense" &&
-        t.category === "Transportation" &&
-        t.description.startsWith("Daily Transport") &&
-        t.date.startsWith(monthKey)
-    );
-    for (const t of monthTransport) {
+    for (const t of existingTransport) {
       const day = new Date(t.date).getDate();
       init[day] = String(t.amount);
     }
     setDailyAmounts(init);
-  }, [selectedYear, selectedMonth, transactions.length]);
+  }, [selectedYear, selectedMonth, existingTransport.length]);
 
   const totalMonthly = useMemo(() => {
     let total = 0;
@@ -93,7 +95,7 @@ export default function Transportation() {
       for (let d = 1; d <= daysCount; d++) {
         const amt = parseFloat(dailyAmounts[d] || "0");
         if (amt > 0) {
-          const dateStr = new Date(selectedYear, selectedMonth, d).toISOString();
+          const dateStr = toLocalDateStr(selectedYear, selectedMonth, d) + "T12:00:00";
           await addTransaction({
             type: "expense",
             amount: amt,
