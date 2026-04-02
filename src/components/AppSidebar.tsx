@@ -7,6 +7,7 @@ const navItems = [
   { to: "/transactions", icon: ArrowUpDown, label: "Transactions" },
   { to: "/reports", icon: BarChart3, label: "Reports" },
   { to: "/budgets", icon: Target, label: "Budgets" },
+  { to: "/transportation", icon: Bus, label: "Transportation" },
 ];
 
 export default function AppSidebar() {
