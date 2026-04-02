@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Transaction, formatCurrency, formatDate, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/store";
 import { formatNepaliDateFromISO } from "@/lib/nepali-date";
-import { ArrowDownRight, ArrowUpRight, FileText, GripHorizontal } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, FileText, GripHorizontal, Bus } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface ReportFormViewProps {
@@ -23,8 +23,15 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
 
   const income = sorted.filter((t) => t.type === "income");
   const expenses = sorted.filter((t) => t.type === "expense");
+  const transportExpenses = sorted.filter(
+    (t) => t.type === "expense" && t.category === "Transportation" && t.description.startsWith("Daily Transport")
+  );
+  const otherExpenses = expenses.filter(
+    (t) => !(t.category === "Transportation" && t.description.startsWith("Daily Transport"))
+  );
   const totalIncome = income.reduce((s, t) => s + t.amount, 0);
   const totalExpense = expenses.reduce((s, t) => s + t.amount, 0);
+  const totalTransport = transportExpenses.reduce((s, t) => s + t.amount, 0);
   const netBalance = totalIncome - totalExpense;
 
   const colSpan = showNepaliDates ? 6 : 5;
@@ -84,6 +91,10 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
               <p className="text-base font-bold text-rose-700">{formatCurrency(totalExpense)}</p>
             </div>
             <div className="border-l border-gray-200 pl-6">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Transport</p>
+              <p className="text-base font-bold text-amber-700">{formatCurrency(totalTransport)}</p>
+            </div>
+            <div className="border-l border-gray-200 pl-6">
               <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Net Balance</p>
               <p className={`text-base font-bold ${netBalance >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
                 {formatCurrency(netBalance)}
@@ -93,7 +104,7 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
         </div>
 
         {/* Two-column tables */}
-        <div className="grid grid-cols-2 divide-x divide-gray-200" style={{ maxHeight: "calc(100vh - 260px)", overflow: "auto" }}>
+        <div className="grid grid-cols-2 divide-x divide-gray-200" style={{ maxHeight: "calc(100vh - 360px)", overflow: "auto" }}>
           
           {/* Income */}
           <div>
@@ -130,17 +141,17 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
             )}
           </div>
 
-          {/* Expenses */}
+          {/* Expenses (non-transport) */}
           <div>
             <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-200 bg-rose-50/60 sticky top-0 z-10">
               <div className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center">
                 <ArrowDownRight className="h-3.5 w-3.5 text-rose-700" />
               </div>
               <h3 className="text-sm font-bold text-gray-800">Expenses</h3>
-              <span className="text-[11px] text-gray-500">({expenses.length})</span>
-              <span className="ml-auto text-sm font-bold text-rose-700">{formatCurrency(totalExpense)}</span>
+              <span className="text-[11px] text-gray-500">({otherExpenses.length})</span>
+              <span className="ml-auto text-sm font-bold text-rose-700">{formatCurrency(otherExpenses.reduce((s, t) => s + t.amount, 0))}</span>
             </div>
-            {expenses.length > 0 ? (
+            {otherExpenses.length > 0 ? (
               <table className="w-full border-collapse">
                 <thead className="sticky top-[41px] z-10 bg-white">
                   <tr className="border-b-2 border-gray-200">
@@ -152,11 +163,11 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
                     <th className={`${thClass} text-right`}>Amount</th>
                   </tr>
                 </thead>
-                <tbody>{expenses.map((t, i) => renderRow(t, i, "expense"))}</tbody>
+                <tbody>{otherExpenses.map((t, i) => renderRow(t, i, "expense"))}</tbody>
                 <tfoot>
                   <tr className="border-t-2 border-gray-300 bg-rose-50/60">
                     <td colSpan={colSpan - 1} className="py-2 px-2 text-xs font-bold text-gray-800">Total Expenses</td>
-                    <td className="py-2 px-2 text-right text-xs font-bold text-rose-700">{formatCurrency(totalExpense)}</td>
+                    <td className="py-2 px-2 text-right text-xs font-bold text-rose-700">{formatCurrency(otherExpenses.reduce((s, t) => s + t.amount, 0))}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -165,6 +176,35 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
             )}
           </div>
         </div>
+
+        {/* Transportation Daily Breakdown */}
+        {transportExpenses.length > 0 && (
+          <div className="border-t-2 border-gray-300">
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50/60 border-b border-gray-200">
+              <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center">
+                <Bus className="h-3.5 w-3.5 text-amber-700" />
+              </div>
+              <h3 className="text-sm font-bold text-gray-800">Daily Transportation</h3>
+              <span className="text-[11px] text-gray-500">({transportExpenses.length} days)</span>
+              <span className="ml-auto text-sm font-bold text-amber-700">{formatCurrency(totalTransport)}</span>
+            </div>
+            <div className="px-4 py-3" style={{ maxHeight: "200px", overflow: "auto" }}>
+              <div className="grid grid-cols-5 sm:grid-cols-7 lg:grid-cols-10 gap-1.5">
+                {transportExpenses
+                  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                  .map((t) => {
+                    const day = new Date(t.date).getDate();
+                    return (
+                      <div key={t.id} className="text-center p-1.5 rounded bg-amber-50 border border-amber-200">
+                        <p className="text-[10px] text-gray-500 font-medium">Day {day}</p>
+                        <p className="text-xs font-bold text-amber-800">{formatCurrency(t.amount)}</p>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="px-8 py-3 border-t-2 border-gray-300 bg-gray-50 flex items-center justify-between">
