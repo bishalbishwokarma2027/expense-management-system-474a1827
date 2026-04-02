@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useTransactions, formatCurrency } from "@/lib/store";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -53,15 +53,22 @@ export default function Transportation() {
   }, [existingTransport]);
 
   // Initialize daily amounts from existing data when month changes
-  useMemo(() => {
+  useEffect(() => {
     const init: Record<number, string> = {};
-    for (let d = 1; d <= daysCount; d++) {
-      if (existingByDay[d]) {
-        init[d] = String(existingByDay[d].amount);
-      }
+    const monthKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}`;
+    const monthTransport = transactions.filter(
+      (t) =>
+        t.type === "expense" &&
+        t.category === "Transportation" &&
+        t.description.startsWith("Daily Transport") &&
+        t.date.startsWith(monthKey)
+    );
+    for (const t of monthTransport) {
+      const day = new Date(t.date).getDate();
+      init[day] = String(t.amount);
     }
     setDailyAmounts(init);
-  }, [selectedYear, selectedMonth, existingByDay, daysCount]);
+  }, [selectedYear, selectedMonth, transactions.length]);
 
   const totalMonthly = useMemo(() => {
     let total = 0;
