@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, ArrowUpDown, BarChart3, Target, Bus } from "lucide-react";
+import { LayoutDashboard, ArrowUpDown, BarChart3, Target, Bus, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -8,6 +8,7 @@ const navItems = [
   { to: "/reports", icon: BarChart3, label: "Reports" },
   { to: "/budgets", icon: Target, label: "Budgets" },
   { to: "/transportation", icon: Bus, label: "Transportation" },
+  { to: "/track-expense", icon: CalendarDays, label: "Track Expense" },
 ];
 
 export default function AppSidebar() {
