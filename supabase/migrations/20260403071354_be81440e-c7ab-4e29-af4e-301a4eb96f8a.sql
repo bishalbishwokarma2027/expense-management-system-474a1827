@@ -1,0 +1,1 @@
+CREATE POLICY "Anyone can update transactions" ON public.transactions FOR UPDATE TO public USING (true) WITH CHECK (true);
