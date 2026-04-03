@@ -191,7 +191,7 @@ export default function Transportation() {
           {Array.from({ length: daysCount }, (_, i) => i + 1).map((day) => {
             const dateISO = new Date(selectedYear, selectedMonth, day).toISOString();
             const dayName = getDayName(selectedYear, selectedMonth, day);
-            const isSunday = new Date(selectedYear, selectedMonth, day).getDay() === 0;
+            const isSaturday = new Date(selectedYear, selectedMonth, day).getDay() === 6;
             const isToday = isCurrentMonth && today.getDate() === day;
             const hasValue = parseFloat(dailyAmounts[day] || "0") > 0;
             const isSaved = !!existingByDay[day];
@@ -205,12 +205,12 @@ export default function Transportation() {
                 className={`flex items-center gap-2 p-2 rounded-lg border transition-colors ${
                   isToday
                     ? "border-primary bg-primary/5"
-                    : isSunday
+                    : isSaturday
                     ? "border-red-200 bg-red-50/50 dark:border-red-900/30 dark:bg-red-900/10"
                     : "border-border"
                 }`}
               >
-                <div className={`w-14 text-center ${isSunday ? "text-red-500" : "text-muted-foreground"}`}>
+                <div className={`w-14 text-center ${isSaturday ? "text-red-500" : "text-muted-foreground"}`}>
                   <p className="text-xs font-medium">{dayName}</p>
                   <p className="text-lg font-heading font-bold">{day}</p>
                 </div>
