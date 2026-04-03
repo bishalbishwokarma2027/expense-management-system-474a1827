@@ -30,13 +30,16 @@ export default function Layout() {
               <span className="text-primary font-medium">• {nepaliDate}</span>
             )}
           </div>
-          <button
-            onClick={() => setShowNepali(!showNepali)}
-            className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors px-2.5 py-1.5 rounded-md border border-border hover:border-primary/30"
-          >
-            <Globe className="h-3.5 w-3.5" />
-            {showNepali ? "Hide Nepali Date" : "Nepali Date"}
-          </button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <button
+              onClick={() => setShowNepali(!showNepali)}
+              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors px-2.5 py-1.5 rounded-md border border-border hover:border-primary/30"
+            >
+              <Globe className="h-3.5 w-3.5" />
+              {showNepali ? "Hide Nepali Date" : "Nepali Date"}
+            </button>
+          </div>
         </div>
         <Outlet />
       </main>
