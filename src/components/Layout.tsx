@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import AppSidebar from "./AppSidebar";
+import ThemeToggle from "./ThemeToggle";
 import { Calendar, Globe } from "lucide-react";
 import { formatNepaliDate } from "@/lib/nepali-date";
 
