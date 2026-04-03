@@ -210,7 +210,7 @@ export default function Transportation() {
                     : "border-border"
                 }`}
               >
-                <div className={`w-14 text-center ${isSunday ? "text-red-500" : "text-muted-foreground"}`}>
+                <div className={`w-14 text-center ${isSaturday ? "text-red-500" : "text-muted-foreground"}`}>
                   <p className="text-xs font-medium">{dayName}</p>
                   <p className="text-lg font-heading font-bold">{day}</p>
                 </div>
