@@ -102,12 +102,23 @@ export function useTransactions() {
     return null;
   }, []);
 
+  const updateTransaction = useCallback(async (id: string, updates: Partial<Omit<Transaction, "id" | "createdAt">>) => {
+    const dbUpdates: Record<string, unknown> = {};
+    if (updates.type !== undefined) dbUpdates.type = updates.type;
+    if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
+    if (updates.category !== undefined) dbUpdates.category = updates.category;
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+    if (updates.date !== undefined) dbUpdates.date = updates.date;
+    await supabase.from("transactions").update(dbUpdates).eq("id", id);
+    emitUpdate();
+  }, []);
+
   const deleteTransaction = useCallback(async (id: string) => {
     await supabase.from("transactions").delete().eq("id", id);
     emitUpdate();
   }, []);
 
-  return { transactions, addTransaction, deleteTransaction };
+  return { transactions, addTransaction, updateTransaction, deleteTransaction };
 }
 
 export function useBudgets() {
