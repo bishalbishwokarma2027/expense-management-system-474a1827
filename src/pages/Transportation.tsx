@@ -205,7 +205,7 @@ export default function Transportation() {
                 className={`flex items-center gap-2 p-2 rounded-lg border transition-colors ${
                   isToday
                     ? "border-primary bg-primary/5"
-                    : isSunday
+                    : isSaturday
                     ? "border-red-200 bg-red-50/50 dark:border-red-900/30 dark:bg-red-900/10"
                     : "border-border"
                 }`}
