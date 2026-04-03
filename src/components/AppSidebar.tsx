@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, ArrowUpDown, BarChart3, Target, Bus } from "lucide-react";
+import { LayoutDashboard, ArrowUpDown, BarChart3, Target, Bus, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
