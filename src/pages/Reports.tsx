@@ -35,8 +35,24 @@ export default function Reports() {
 
   const income = filteredTx.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
   const expense = filteredTx.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
-  const savings = income - expense;
-  const savingsRate = income > 0 ? ((savings / income) * 100).toFixed(1) : "0.0";
+
+  // Calculate previous month's net balance for carry-forward
+  const previousMonthBalance = useMemo(() => {
+    if (view !== "monthly") return 0;
+    const m = Number(selectedMonth);
+    const y = Number(selectedYear);
+    const prevMonth = m === 0 ? 11 : m - 1;
+    const prevYear = m === 0 ? y - 1 : y;
+    const prevKey = `${prevYear}-${String(prevMonth + 1).padStart(2, "0")}`;
+    const prevTx = transactions.filter((t) => getMonthKey(t.date) === prevKey);
+    const prevIncome = prevTx.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
+    const prevExpense = prevTx.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+    return prevIncome - prevExpense;
+  }, [transactions, view, selectedYear, selectedMonth]);
+
+  const savings = income - expense + (previousMonthBalance > 0 ? previousMonthBalance : 0);
+  const totalAvailable = income + (previousMonthBalance > 0 ? previousMonthBalance : 0);
+  const savingsRate = totalAvailable > 0 ? ((savings / totalAvailable) * 100).toFixed(1) : "0.0";
 
   const expenseBreakdown = useMemo(() => {
     const expTx = filteredTx.filter((t) => t.type === "expense");
