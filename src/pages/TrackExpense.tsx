@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useTransactions, formatCurrency, formatDate, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/store";
-import { formatNepaliDate, formatNepaliDateFromISO } from "@/lib/nepali-date";
+import { formatNepaliDate, adToBS } from "@/lib/nepali-date";
 import ReportFormView from "@/components/ReportFormView";
 import { ChevronLeft, ChevronRight, CalendarDays, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -179,11 +179,19 @@ export default function TrackExpense() {
                     : "border-border hover:border-primary/30 hover:bg-accent/50"
                 }`}
               >
-                <span className={`text-sm font-heading font-bold ${
-                  today ? "text-primary" : isSat ? "text-destructive" : "text-foreground"
-                }`}>
-                  {day}
-                </span>
+                <div className="flex flex-col items-start">
+                  <span className={`text-sm font-heading font-bold ${
+                    today ? "text-primary" : isSat ? "text-destructive" : "text-foreground"
+                  }`}>
+                    {day}
+                  </span>
+                  <span className="text-[8px] text-muted-foreground leading-tight">
+                    {(() => {
+                      const bs = adToBS(new Date(year, month, day));
+                      return `${bs.day} ${bs.monthName.slice(0, 3)}`;
+                    })()}
+                  </span>
+                </div>
 
                 {dayTx.length > 0 && (
                   <div className="mt-auto space-y-0.5">

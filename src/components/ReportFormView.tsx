@@ -8,6 +8,7 @@ interface ReportFormViewProps {
   transactions: Transaction[];
   periodLabel: string;
   showNepaliDates: boolean;
+  previousMonthBalance?: number;
 }
 
 function getCategoryIcon(category: string, type: string): string {
@@ -15,7 +16,7 @@ function getCategoryIcon(category: string, type: string): string {
   return cats.find((c) => c.name === category)?.icon ?? (type === "expense" ? "📦" : "💵");
 }
 
-export default function ReportFormView({ transactions, periodLabel, showNepaliDates }: ReportFormViewProps) {
+export default function ReportFormView({ transactions, periodLabel, showNepaliDates, previousMonthBalance = 0 }: ReportFormViewProps) {
   const sorted = useMemo(
     () => [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [transactions]
@@ -32,7 +33,8 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
   const totalIncome = income.reduce((s, t) => s + t.amount, 0);
   const totalExpense = expenses.reduce((s, t) => s + t.amount, 0);
   const totalTransport = transportExpenses.reduce((s, t) => s + t.amount, 0);
-  const netBalance = totalIncome - totalExpense;
+  const effectiveIncome = totalIncome + (previousMonthBalance > 0 ? previousMonthBalance : 0);
+  const netBalance = effectiveIncome - totalExpense;
 
   const colSpan = showNepaliDates ? 6 : 5;
 
@@ -82,7 +84,13 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
             </div>
           </div>
           <div className="flex gap-6 text-center">
-            <div>
+            {previousMonthBalance > 0 && (
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Prev Balance</p>
+                <p className="text-base font-bold text-blue-700">{formatCurrency(previousMonthBalance)}</p>
+              </div>
+            )}
+            <div className={previousMonthBalance > 0 ? "border-l border-gray-200 pl-6" : ""}>
               <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Income</p>
               <p className="text-base font-bold text-emerald-700">{formatCurrency(totalIncome)}</p>
             </div>

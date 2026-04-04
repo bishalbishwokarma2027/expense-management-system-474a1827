@@ -35,8 +35,24 @@ export default function Reports() {
 
   const income = filteredTx.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
   const expense = filteredTx.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
-  const savings = income - expense;
-  const savingsRate = income > 0 ? ((savings / income) * 100).toFixed(1) : "0.0";
+
+  // Calculate previous month's net balance for carry-forward
+  const previousMonthBalance = useMemo(() => {
+    if (view !== "monthly") return 0;
+    const m = Number(selectedMonth);
+    const y = Number(selectedYear);
+    const prevMonth = m === 0 ? 11 : m - 1;
+    const prevYear = m === 0 ? y - 1 : y;
+    const prevKey = `${prevYear}-${String(prevMonth + 1).padStart(2, "0")}`;
+    const prevTx = transactions.filter((t) => getMonthKey(t.date) === prevKey);
+    const prevIncome = prevTx.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
+    const prevExpense = prevTx.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+    return prevIncome - prevExpense;
+  }, [transactions, view, selectedYear, selectedMonth]);
+
+  const savings = income - expense + (previousMonthBalance > 0 ? previousMonthBalance : 0);
+  const totalAvailable = income + (previousMonthBalance > 0 ? previousMonthBalance : 0);
+  const savingsRate = totalAvailable > 0 ? ((savings / totalAvailable) * 100).toFixed(1) : "0.0";
 
   const expenseBreakdown = useMemo(() => {
     const expTx = filteredTx.filter((t) => t.type === "expense");
@@ -107,7 +123,7 @@ export default function Reports() {
             {showNepaliDates ? "Hide Nepali Dates" : "Show Nepali Dates"}
           </Button>
         </div>
-        <ReportFormView transactions={filteredTx} periodLabel={periodLabel} showNepaliDates={showNepaliDates} />
+        <ReportFormView transactions={filteredTx} periodLabel={periodLabel} showNepaliDates={showNepaliDates} previousMonthBalance={previousMonthBalance} />
       </div>
     );
   }
@@ -174,11 +190,12 @@ export default function Reports() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${previousMonthBalance > 0 ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
         {[
+          ...(previousMonthBalance > 0 ? [{ label: "Prev Month Balance", value: previousMonthBalance, icon: Wallet, cls: "text-blue-600 dark:text-blue-400", bgCls: "bg-blue-500/10 text-blue-600" }] : []),
           { label: "Total Income", value: income, icon: TrendingUp, cls: "text-income", bgCls: "bg-income/10 text-income" },
           { label: "Total Expenses", value: expense, icon: TrendingDown, cls: "text-expense", bgCls: "bg-expense/10 text-expense" },
-          { label: "Net Savings", value: savings, icon: Wallet, cls: savings >= 0 ? "text-income" : "text-expense", bgCls: savings >= 0 ? "bg-income/10 text-income" : "bg-expense/10 text-expense" },
+          { label: "Net Balance", value: savings, icon: Wallet, cls: savings >= 0 ? "text-income" : "text-expense", bgCls: savings >= 0 ? "bg-income/10 text-income" : "bg-expense/10 text-expense" },
           { label: "Savings Rate", value: null, icon: ArrowUpRight, cls: "text-primary", bgCls: "bg-primary/10 text-primary", displayValue: `${savingsRate}%` },
         ].map((item, i) => (
           <motion.div

@@ -189,7 +189,7 @@ export default function Transportation() {
       <div className="glass-card p-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
           {Array.from({ length: daysCount }, (_, i) => i + 1).map((day) => {
-            const dateISO = new Date(selectedYear, selectedMonth, day).toISOString();
+            const dateStr = toLocalDateStr(selectedYear, selectedMonth, day) + "T12:00:00";
             const dayName = getDayName(selectedYear, selectedMonth, day);
             const isSaturday = new Date(selectedYear, selectedMonth, day).getDay() === 6;
             const isToday = isCurrentMonth && today.getDate() === day;
@@ -227,7 +227,7 @@ export default function Transportation() {
                     className="h-8 text-sm font-heading"
                   />
                   <p className="text-[10px] text-muted-foreground truncate">
-                    {formatNepaliDateFromISO(dateISO)}
+                    {formatNepaliDateFromISO(dateStr)}
                   </p>
                 </div>
                 {isSaved && hasValue && (
