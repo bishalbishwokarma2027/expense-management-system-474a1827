@@ -33,7 +33,8 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
   const totalIncome = income.reduce((s, t) => s + t.amount, 0);
   const totalExpense = expenses.reduce((s, t) => s + t.amount, 0);
   const totalTransport = transportExpenses.reduce((s, t) => s + t.amount, 0);
-  const netBalance = totalIncome - totalExpense;
+  const effectiveIncome = totalIncome + (previousMonthBalance > 0 ? previousMonthBalance : 0);
+  const netBalance = effectiveIncome - totalExpense;
 
   const colSpan = showNepaliDates ? 6 : 5;
 
