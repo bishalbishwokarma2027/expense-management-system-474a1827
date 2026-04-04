@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useTransactions, formatCurrency, formatDate, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/store";
-import { formatNepaliDate, formatNepaliDateFromISO } from "@/lib/nepali-date";
+import { formatNepaliDate, adToBS } from "@/lib/nepali-date";
 import ReportFormView from "@/components/ReportFormView";
 import { ChevronLeft, ChevronRight, CalendarDays, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
