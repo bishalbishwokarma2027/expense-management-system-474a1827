@@ -190,11 +190,12 @@ export default function Reports() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${previousMonthBalance > 0 ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
         {[
+          ...(previousMonthBalance > 0 ? [{ label: "Prev Month Balance", value: previousMonthBalance, icon: Wallet, cls: "text-blue-600 dark:text-blue-400", bgCls: "bg-blue-500/10 text-blue-600" }] : []),
           { label: "Total Income", value: income, icon: TrendingUp, cls: "text-income", bgCls: "bg-income/10 text-income" },
           { label: "Total Expenses", value: expense, icon: TrendingDown, cls: "text-expense", bgCls: "bg-expense/10 text-expense" },
-          { label: "Net Savings", value: savings, icon: Wallet, cls: savings >= 0 ? "text-income" : "text-expense", bgCls: savings >= 0 ? "bg-income/10 text-income" : "bg-expense/10 text-expense" },
+          { label: "Net Balance", value: savings, icon: Wallet, cls: savings >= 0 ? "text-income" : "text-expense", bgCls: savings >= 0 ? "bg-income/10 text-income" : "bg-expense/10 text-expense" },
           { label: "Savings Rate", value: null, icon: ArrowUpRight, cls: "text-primary", bgCls: "bg-primary/10 text-primary", displayValue: `${savingsRate}%` },
         ].map((item, i) => (
           <motion.div
