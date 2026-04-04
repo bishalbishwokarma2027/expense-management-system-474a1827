@@ -16,7 +16,7 @@ function getCategoryIcon(category: string, type: string): string {
   return cats.find((c) => c.name === category)?.icon ?? (type === "expense" ? "📦" : "💵");
 }
 
-export default function ReportFormView({ transactions, periodLabel, showNepaliDates }: ReportFormViewProps) {
+export default function ReportFormView({ transactions, periodLabel, showNepaliDates, previousMonthBalance = 0 }: ReportFormViewProps) {
   const sorted = useMemo(
     () => [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [transactions]
