@@ -8,6 +8,7 @@ interface ReportFormViewProps {
   transactions: Transaction[];
   periodLabel: string;
   showNepaliDates: boolean;
+  previousMonthBalance?: number;
 }
 
 function getCategoryIcon(category: string, type: string): string {
