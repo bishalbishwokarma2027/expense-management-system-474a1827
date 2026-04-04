@@ -8,7 +8,8 @@ interface ReportFormViewProps {
   transactions: Transaction[];
   periodLabel: string;
   showNepaliDates: boolean;
-  previousMonthBalance?: number;
+  previousBalance?: number;
+  previousBalanceLabel?: string;
 }
 
 function getCategoryIcon(category: string, type: string): string {
@@ -16,7 +17,7 @@ function getCategoryIcon(category: string, type: string): string {
   return cats.find((c) => c.name === category)?.icon ?? (type === "expense" ? "📦" : "💵");
 }
 
-export default function ReportFormView({ transactions, periodLabel, showNepaliDates, previousMonthBalance = 0 }: ReportFormViewProps) {
+export default function ReportFormView({ transactions, periodLabel, showNepaliDates, previousBalance = 0, previousBalanceLabel = "Prev Balance" }: ReportFormViewProps) {
   const sorted = useMemo(
     () => [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [transactions]
@@ -33,7 +34,8 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
   const totalIncome = income.reduce((s, t) => s + t.amount, 0);
   const totalExpense = expenses.reduce((s, t) => s + t.amount, 0);
   const totalTransport = transportExpenses.reduce((s, t) => s + t.amount, 0);
-  const effectiveIncome = totalIncome + (previousMonthBalance > 0 ? previousMonthBalance : 0);
+  const totalOtherExpense = otherExpenses.reduce((s, t) => s + t.amount, 0);
+  const effectiveIncome = totalIncome + (previousBalance > 0 ? previousBalance : 0);
   const netBalance = effectiveIncome - totalExpense;
 
   const colSpan = showNepaliDates ? 6 : 5;
@@ -84,23 +86,27 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
             </div>
           </div>
           <div className="flex gap-6 text-center">
-            {previousMonthBalance > 0 && (
+            {previousBalance > 0 && (
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Prev Balance</p>
-                <p className="text-base font-bold text-blue-700">{formatCurrency(previousMonthBalance)}</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{previousBalanceLabel}</p>
+                <p className="text-base font-bold text-blue-700">{formatCurrency(previousBalance)}</p>
               </div>
             )}
-            <div className={previousMonthBalance > 0 ? "border-l border-gray-200 pl-6" : ""}>
+            <div className={previousBalance > 0 ? "border-l border-gray-200 pl-6" : ""}>
               <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Income</p>
               <p className="text-base font-bold text-emerald-700">{formatCurrency(totalIncome)}</p>
             </div>
             <div className="border-l border-gray-200 pl-6">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Expenses</p>
-              <p className="text-base font-bold text-rose-700">{formatCurrency(totalExpense)}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Other Expenses</p>
+              <p className="text-base font-bold text-rose-700">{formatCurrency(totalOtherExpense)}</p>
             </div>
             <div className="border-l border-gray-200 pl-6">
               <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Transport</p>
               <p className="text-base font-bold text-amber-700">{formatCurrency(totalTransport)}</p>
+            </div>
+            <div className="border-l border-gray-200 pl-6">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Grand Total Expense</p>
+              <p className="text-base font-bold text-rose-700">{formatCurrency(totalExpense)}</p>
             </div>
             <div className="border-l border-gray-200 pl-6">
               <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Net Balance</p>
@@ -114,7 +120,7 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
         {/* Two-column tables */}
         <div className="grid grid-cols-2 divide-x divide-gray-200" style={{ maxHeight: "calc(100vh - 360px)", overflow: "auto" }}>
           
-          {/* Income */}
+          {/* Income side - includes prev balance */}
           <div>
             <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-200 bg-emerald-50/60 sticky top-0 z-10">
               <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
@@ -122,44 +128,58 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
               </div>
               <h3 className="text-sm font-bold text-gray-800">Income</h3>
               <span className="text-[11px] text-gray-500">({income.length})</span>
-              <span className="ml-auto text-sm font-bold text-emerald-700">{formatCurrency(totalIncome)}</span>
+              <span className="ml-auto text-sm font-bold text-emerald-700">{formatCurrency(effectiveIncome)}</span>
             </div>
-            {income.length > 0 ? (
-              <table className="w-full border-collapse">
-                <thead className="sticky top-[41px] z-10 bg-white">
-                  <tr className="border-b-2 border-gray-200">
-                    <th className={`${thClass} w-8`}>#</th>
-                    <th className={thClass}>Date</th>
-                    {showNepaliDates && <th className={thClass}>BS Date</th>}
-                    <th className={thClass}>Category</th>
-                    <th className={thClass}>Description</th>
-                    <th className={`${thClass} text-right`}>Amount</th>
+            <table className="w-full border-collapse">
+              <thead className="sticky top-[41px] z-10 bg-white">
+                <tr className="border-b-2 border-gray-200">
+                  <th className={`${thClass} w-8`}>#</th>
+                  <th className={thClass}>Date</th>
+                  {showNepaliDates && <th className={thClass}>BS Date</th>}
+                  <th className={thClass}>Category</th>
+                  <th className={thClass}>Description</th>
+                  <th className={`${thClass} text-right`}>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {previousBalance > 0 && (
+                  <tr className="border-b border-gray-100 bg-blue-50/50">
+                    <td className="py-1.5 px-2 text-gray-400 text-xs">—</td>
+                    <td className="py-1.5 px-2 text-gray-800 text-xs font-medium" colSpan={showNepaliDates ? 2 : 1}>—</td>
+                    <td className="py-1.5 px-2 text-xs">
+                      <span className="flex items-center gap-1">
+                        <span className="text-sm">💰</span>
+                        <span className="text-blue-700 font-medium">{previousBalanceLabel}</span>
+                      </span>
+                    </td>
+                    <td className="py-1.5 px-2 text-gray-600 text-xs">Carry-forward balance</td>
+                    <td className="py-1.5 px-2 text-right text-xs font-bold text-blue-700 whitespace-nowrap">{formatCurrency(previousBalance)}</td>
                   </tr>
-                </thead>
-                <tbody>{income.map((t, i) => renderRow(t, i, "income"))}</tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-gray-300 bg-emerald-50/60">
-                    <td colSpan={colSpan - 1} className="py-2 px-2 text-xs font-bold text-gray-800">Total Income</td>
-                    <td className="py-2 px-2 text-right text-xs font-bold text-emerald-700">{formatCurrency(totalIncome)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            ) : (
-              <div className="flex items-center justify-center text-gray-400 text-sm py-12">No income recorded</div>
-            )}
+                )}
+                {income.map((t, i) => renderRow(t, i, "income"))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-gray-300 bg-emerald-50/60">
+                  <td colSpan={colSpan - 1} className="py-2 px-2 text-xs font-bold text-gray-800">
+                    Total Income {previousBalance > 0 ? "(incl. Prev Balance)" : ""}
+                  </td>
+                  <td className="py-2 px-2 text-right text-xs font-bold text-emerald-700">{formatCurrency(effectiveIncome)}</td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
 
-          {/* Expenses (non-transport) */}
+          {/* Expenses side - other expenses */}
           <div>
             <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-200 bg-rose-50/60 sticky top-0 z-10">
               <div className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center">
                 <ArrowDownRight className="h-3.5 w-3.5 text-rose-700" />
               </div>
               <h3 className="text-sm font-bold text-gray-800">Expenses</h3>
-              <span className="text-[11px] text-gray-500">({otherExpenses.length})</span>
-              <span className="ml-auto text-sm font-bold text-rose-700">{formatCurrency(otherExpenses.reduce((s, t) => s + t.amount, 0))}</span>
+              <span className="text-[11px] text-gray-500">({otherExpenses.length} other + {transportExpenses.length} transport)</span>
+              <span className="ml-auto text-sm font-bold text-rose-700">{formatCurrency(totalExpense)}</span>
             </div>
-            {otherExpenses.length > 0 ? (
+            {otherExpenses.length > 0 || transportExpenses.length > 0 ? (
               <table className="w-full border-collapse">
                 <thead className="sticky top-[41px] z-10 bg-white">
                   <tr className="border-b-2 border-gray-200">
@@ -171,11 +191,49 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
                     <th className={`${thClass} text-right`}>Amount</th>
                   </tr>
                 </thead>
-                <tbody>{otherExpenses.map((t, i) => renderRow(t, i, "expense"))}</tbody>
+                <tbody>
+                  {otherExpenses.map((t, i) => renderRow(t, i, "expense"))}
+                  {/* Subtotal for other expenses */}
+                  {otherExpenses.length > 0 && transportExpenses.length > 0 && (
+                    <tr className="border-t border-gray-300 bg-rose-50/40">
+                      <td colSpan={colSpan - 1} className="py-1.5 px-2 text-xs font-bold text-gray-600">Subtotal (Other)</td>
+                      <td className="py-1.5 px-2 text-right text-xs font-bold text-rose-600">{formatCurrency(totalOtherExpense)}</td>
+                    </tr>
+                  )}
+                  {/* Transport expenses inline */}
+                  {transportExpenses.length > 0 && (
+                    <>
+                      <tr className="bg-amber-50/60">
+                        <td colSpan={colSpan} className="py-1.5 px-2 text-xs font-bold text-amber-800 flex items-center gap-1">
+                          <Bus className="h-3 w-3" /> Daily Transportation ({transportExpenses.length} days)
+                        </td>
+                      </tr>
+                      {transportExpenses.map((t, i) => (
+                        <tr key={t.id} className={`border-b border-gray-100 ${i % 2 === 0 ? "bg-amber-50/20" : "bg-amber-50/40"}`}>
+                          <td className="py-1.5 px-2 text-gray-400 text-xs">{otherExpenses.length + i + 1}</td>
+                          <td className="py-1.5 px-2 text-gray-800 text-xs font-medium whitespace-nowrap">{formatDate(t.date)}</td>
+                          {showNepaliDates && <td className="py-1.5 px-2 text-blue-700 text-xs whitespace-nowrap">{formatNepaliDateFromISO(t.date)}</td>}
+                          <td className="py-1.5 px-2 text-xs">
+                            <span className="flex items-center gap-1">
+                              <span className="text-sm">🚌</span>
+                              <span className="text-amber-800 font-medium">Transport</span>
+                            </span>
+                          </td>
+                          <td className="py-1.5 px-2 text-gray-600 text-xs">{t.description}</td>
+                          <td className="py-1.5 px-2 text-right text-xs font-bold text-amber-700 whitespace-nowrap">{formatCurrency(t.amount)}</td>
+                        </tr>
+                      ))}
+                      <tr className="border-t border-amber-300 bg-amber-50/60">
+                        <td colSpan={colSpan - 1} className="py-1.5 px-2 text-xs font-bold text-amber-800">Subtotal (Transport)</td>
+                        <td className="py-1.5 px-2 text-right text-xs font-bold text-amber-700">{formatCurrency(totalTransport)}</td>
+                      </tr>
+                    </>
+                  )}
+                </tbody>
                 <tfoot>
                   <tr className="border-t-2 border-gray-300 bg-rose-50/60">
-                    <td colSpan={colSpan - 1} className="py-2 px-2 text-xs font-bold text-gray-800">Total Expenses</td>
-                    <td className="py-2 px-2 text-right text-xs font-bold text-rose-700">{formatCurrency(otherExpenses.reduce((s, t) => s + t.amount, 0))}</td>
+                    <td colSpan={colSpan - 1} className="py-2 px-2 text-sm font-bold text-gray-900">Grand Total Expenses</td>
+                    <td className="py-2 px-2 text-right text-sm font-bold text-rose-700">{formatCurrency(totalExpense)}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -184,35 +242,6 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
             )}
           </div>
         </div>
-
-        {/* Transportation Daily Breakdown */}
-        {transportExpenses.length > 0 && (
-          <div className="border-t-2 border-gray-300">
-            <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50/60 border-b border-gray-200">
-              <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center">
-                <Bus className="h-3.5 w-3.5 text-amber-700" />
-              </div>
-              <h3 className="text-sm font-bold text-gray-800">Daily Transportation</h3>
-              <span className="text-[11px] text-gray-500">({transportExpenses.length} days)</span>
-              <span className="ml-auto text-sm font-bold text-amber-700">{formatCurrency(totalTransport)}</span>
-            </div>
-            <div className="px-4 py-3" style={{ maxHeight: "200px", overflow: "auto" }}>
-              <div className="grid grid-cols-5 sm:grid-cols-7 lg:grid-cols-10 gap-1.5">
-                {transportExpenses
-                  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-                  .map((t) => {
-                    const day = new Date(t.date).getDate();
-                    return (
-                      <div key={t.id} className="text-center p-1.5 rounded bg-amber-50 border border-amber-200">
-                        <p className="text-[10px] text-gray-500 font-medium">Day {day}</p>
-                        <p className="text-xs font-bold text-amber-800">{formatCurrency(t.amount)}</p>
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Footer */}
         <div className="px-8 py-3 border-t-2 border-gray-300 bg-gray-50 flex items-center justify-between">

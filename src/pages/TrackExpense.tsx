@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react";
-import { useTransactions, formatCurrency, formatDate, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/store";
-import { formatNepaliDate, adToBS } from "@/lib/nepali-date";
-import ReportFormView from "@/components/ReportFormView";
-import { ChevronLeft, ChevronRight, CalendarDays, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useTransactions, formatCurrency } from "@/lib/store";
+import { adToBS } from "@/lib/nepali-date";
+import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -13,17 +13,29 @@ const MONTHS = [
 
 export default function TrackExpense() {
   const { transactions } = useTransactions();
+  const navigate = useNavigate();
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [showYearPicker, setShowYearPicker] = useState(false);
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayOfWeek = new Date(year, month, 1).getDay();
 
-  // Group transactions by day for this month
-  const txByDay = useMemo(() => {
+  // Previous month net balance (carry-forward)
+  const prevMonthBalance = useMemo(() => {
+    const pm = month === 0 ? 11 : month - 1;
+    const py = month === 0 ? year - 1 : year;
+    const prevTx = transactions.filter((t) => {
+      const d = new Date(t.date);
+      return d.getFullYear() === py && d.getMonth() === pm;
+    });
+    const net = prevTx.reduce((s, t) => s + (t.type === "income" ? t.amount : -t.amount), 0);
+    return net > 0 ? net : 0;
+  }, [transactions, year, month]);
+
+  // Group transactions by day & compute running balance
+  const { txByDay, balanceByDay } = useMemo(() => {
     const map = new Map<number, typeof transactions>();
     transactions.forEach((t) => {
       const d = new Date(t.date);
@@ -33,10 +45,20 @@ export default function TrackExpense() {
         map.get(day)!.push(t);
       }
     });
-    return map;
-  }, [transactions, year, month]);
 
-  const selectedDayTx = selectedDay ? txByDay.get(selectedDay) || [] : [];
+    // Compute running balance per day
+    const balMap = new Map<number, number>();
+    let running = prevMonthBalance;
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dayTx = map.get(d) || [];
+      const dayIncome = dayTx.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
+      const dayExpense = dayTx.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+      // Balance at start of this day (before this day's transactions)
+      balMap.set(d, running);
+      running = running + dayIncome - dayExpense;
+    }
+    return { txByDay: map, balanceByDay: balMap };
+  }, [transactions, year, month, daysInMonth, prevMonthBalance]);
 
   const goToPrevMonth = () => {
     if (month === 0) { setMonth(11); setYear(year - 1); }
@@ -53,6 +75,10 @@ export default function TrackExpense() {
 
   const yearOptions = Array.from({ length: 20 }, (_, i) => now.getFullYear() - 10 + i);
 
+  const handleDayDoubleClick = (day: number) => {
+    navigate(`/track-expense/${year}/${month}/${day}`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -62,7 +88,7 @@ export default function TrackExpense() {
             Track Your Expense
           </h1>
           <p className="text-sm text-muted-foreground">
-            Double-click any day to view detailed transactions
+            Double-click any day to view detailed report
           </p>
         </div>
       </div>
@@ -82,7 +108,10 @@ export default function TrackExpense() {
               {MONTHS[month]} {year}
             </button>
             <span className="text-sm text-primary font-medium">
-              ({formatNepaliDate(new Date(year, month, 15)).split(" ").slice(1).join(" ")})
+              ({(() => {
+                const bs = adToBS(new Date(year, month, 15));
+                return `${bs.monthName} ${bs.year}`;
+              })()})
             </span>
           </div>
 
@@ -161,18 +190,20 @@ export default function TrackExpense() {
             const dayOfWeek = new Date(year, month, day).getDay();
             const isSat = dayOfWeek === 6;
             const today = isToday(day);
-            const isSelected = selectedDay === day;
+            const balance = balanceByDay.get(day) || 0;
+
+            // Nepali date
+            const bs = adToBS(new Date(year, month, day));
+            const nepaliLabel = `${bs.day} ${bs.monthName.slice(0, 3)}`;
 
             return (
               <motion.button
                 key={day}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                onDoubleClick={() => setSelectedDay(day)}
-                className={`relative rounded-lg border transition-all text-left p-1.5 min-h-[80px] flex flex-col ${
-                  isSelected
-                    ? "border-primary bg-primary/10 ring-2 ring-primary/30"
-                    : today
+                onDoubleClick={() => handleDayDoubleClick(day)}
+                className={`relative rounded-lg border transition-all text-left p-1.5 min-h-[90px] flex flex-col ${
+                  today
                     ? "border-primary/50 bg-primary/5"
                     : isSat
                     ? "border-destructive/30 bg-destructive/5"
@@ -185,13 +216,17 @@ export default function TrackExpense() {
                   }`}>
                     {day}
                   </span>
-                  <span className="text-[8px] text-muted-foreground leading-tight">
-                    {(() => {
-                      const bs = adToBS(new Date(year, month, day));
-                      return `${bs.day} ${bs.monthName.slice(0, 3)}`;
-                    })()}
+                  <span className="text-[8px] text-primary/70 leading-tight font-medium">
+                    {nepaliLabel}
                   </span>
                 </div>
+
+                {/* Balance from previous day */}
+                {balance > 0 && (
+                  <div className="text-[9px] font-medium text-blue-500 truncate mt-0.5">
+                    Bal: {formatCurrency(balance)}
+                  </div>
+                )}
 
                 {dayTx.length > 0 && (
                   <div className="mt-auto space-y-0.5">
@@ -222,6 +257,14 @@ export default function TrackExpense() {
 
         {/* Monthly summary */}
         <div className="mt-4 flex items-center justify-center gap-6 pt-3 border-t border-border">
+          {prevMonthBalance > 0 && (
+            <div className="text-center">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Prev Balance</p>
+              <p className="text-sm font-heading font-bold text-blue-500">
+                {formatCurrency(prevMonthBalance)}
+              </p>
+            </div>
+          )}
           <div className="text-center">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Total Income</p>
             <p className="text-sm font-heading font-bold text-income">
@@ -259,43 +302,6 @@ export default function TrackExpense() {
           </div>
         </div>
       </div>
-
-      {/* Day detail report */}
-      <AnimatePresence>
-        {selectedDay !== null && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-heading text-lg font-bold text-foreground">
-                📋 {selectedDay} {MONTHS[month]} {year} — Daily Report
-              </h2>
-              <button
-                onClick={() => setSelectedDay(null)}
-                className="p-2 rounded-lg hover:bg-accent border border-border transition-colors"
-              >
-                <X className="h-4 w-4 text-foreground" />
-              </button>
-            </div>
-            {selectedDayTx.length > 0 ? (
-              <ReportFormView
-                transactions={selectedDayTx}
-                periodLabel={`${selectedDay} ${MONTHS[month]} ${year} • ${formatNepaliDate(new Date(year, month, selectedDay))}`}
-                showNepaliDates={true}
-              />
-            ) : (
-              <div className="glass-card p-12 text-center">
-                <p className="text-muted-foreground text-lg">No transactions on this day</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {formatNepaliDate(new Date(year, month, selectedDay))}
-                </p>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
