@@ -179,11 +179,19 @@ export default function TrackExpense() {
                     : "border-border hover:border-primary/30 hover:bg-accent/50"
                 }`}
               >
-                <span className={`text-sm font-heading font-bold ${
-                  today ? "text-primary" : isSat ? "text-destructive" : "text-foreground"
-                }`}>
-                  {day}
-                </span>
+                <div className="flex flex-col items-start">
+                  <span className={`text-sm font-heading font-bold ${
+                    today ? "text-primary" : isSat ? "text-destructive" : "text-foreground"
+                  }`}>
+                    {day}
+                  </span>
+                  <span className="text-[8px] text-muted-foreground leading-tight">
+                    {(() => {
+                      const bs = adToBS(new Date(year, month, day));
+                      return `${bs.day} ${bs.monthName.slice(0, 3)}`;
+                    })()}
+                  </span>
+                </div>
 
                 {dayTx.length > 0 && (
                   <div className="mt-auto space-y-0.5">

@@ -84,7 +84,13 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
             </div>
           </div>
           <div className="flex gap-6 text-center">
-            <div>
+            {previousMonthBalance > 0 && (
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Prev Balance</p>
+                <p className="text-base font-bold text-blue-700">{formatCurrency(previousMonthBalance)}</p>
+              </div>
+            )}
+            <div className={previousMonthBalance > 0 ? "border-l border-gray-200 pl-6" : ""}>
               <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Income</p>
               <p className="text-base font-bold text-emerald-700">{formatCurrency(totalIncome)}</p>
             </div>

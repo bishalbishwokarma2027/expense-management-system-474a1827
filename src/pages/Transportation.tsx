@@ -227,7 +227,7 @@ export default function Transportation() {
                     className="h-8 text-sm font-heading"
                   />
                   <p className="text-[10px] text-muted-foreground truncate">
-                    {formatNepaliDateFromISO(dateISO)}
+                    {formatNepaliDateFromISO(dateStr)}
                   </p>
                 </div>
                 {isSaved && hasValue && (
