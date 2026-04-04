@@ -123,7 +123,7 @@ export default function Reports() {
             {showNepaliDates ? "Hide Nepali Dates" : "Show Nepali Dates"}
           </Button>
         </div>
-        <ReportFormView transactions={filteredTx} periodLabel={periodLabel} showNepaliDates={showNepaliDates} />
+        <ReportFormView transactions={filteredTx} periodLabel={periodLabel} showNepaliDates={showNepaliDates} previousMonthBalance={previousMonthBalance} />
       </div>
     );
   }
