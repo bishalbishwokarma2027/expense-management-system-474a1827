@@ -223,8 +223,8 @@ export default function TrackExpense() {
                   </span>
                 </div>
 
-                {/* Balance from previous day */}
-                {balance > 0 && (
+                {/* Balance from previous day - only for past/current days */}
+                {balance > 0 && isPastOrToday && (
                   <div className="text-[9px] font-medium text-blue-500 truncate mt-0.5">
                     Bal: {formatCurrency(balance)}
                   </div>
