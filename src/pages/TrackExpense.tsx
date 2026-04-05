@@ -191,9 +191,11 @@ export default function TrackExpense() {
             const isSat = dayOfWeek === 6;
             const today = isToday(day);
             const balance = balanceByDay.get(day) || 0;
+            const cellDate = new Date(year, month, day);
+            const isPastOrToday = cellDate.getTime() <= new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
-            // Nepali date
-            const bs = adToBS(new Date(year, month, day));
+            // Nepali date - use noon to avoid DST issues
+            const bs = adToBS(new Date(year, month, day, 12, 0, 0));
             const nepaliLabel = `${bs.day} ${bs.monthName.slice(0, 3)}`;
 
             return (
@@ -221,8 +223,8 @@ export default function TrackExpense() {
                   </span>
                 </div>
 
-                {/* Balance from previous day */}
-                {balance > 0 && (
+                {/* Balance from previous day - only for past/current days */}
+                {balance > 0 && isPastOrToday && (
                   <div className="text-[9px] font-medium text-blue-500 truncate mt-0.5">
                     Bal: {formatCurrency(balance)}
                   </div>
