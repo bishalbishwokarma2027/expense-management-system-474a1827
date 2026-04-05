@@ -200,34 +200,22 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
                       <td className="py-1.5 px-2 text-right text-xs font-bold text-rose-600">{formatCurrency(totalOtherExpense)}</td>
                     </tr>
                   )}
-                  {/* Transport expenses inline */}
+                  {/* Transport summary row */}
                   {transportExpenses.length > 0 && (
-                    <>
-                      <tr className="bg-amber-50/60">
-                        <td colSpan={colSpan} className="py-1.5 px-2 text-xs font-bold text-amber-800 flex items-center gap-1">
-                          <Bus className="h-3 w-3" /> Daily Transportation ({transportExpenses.length} days)
-                        </td>
-                      </tr>
-                      {transportExpenses.map((t, i) => (
-                        <tr key={t.id} className={`border-b border-gray-100 ${i % 2 === 0 ? "bg-amber-50/20" : "bg-amber-50/40"}`}>
-                          <td className="py-1.5 px-2 text-gray-400 text-xs">{otherExpenses.length + i + 1}</td>
-                          <td className="py-1.5 px-2 text-gray-800 text-xs font-medium whitespace-nowrap">{formatDate(t.date)}</td>
-                          {showNepaliDates && <td className="py-1.5 px-2 text-blue-700 text-xs whitespace-nowrap">{formatNepaliDateFromISO(t.date)}</td>}
-                          <td className="py-1.5 px-2 text-xs">
-                            <span className="flex items-center gap-1">
-                              <span className="text-sm">🚌</span>
-                              <span className="text-amber-800 font-medium">Transport</span>
-                            </span>
-                          </td>
-                          <td className="py-1.5 px-2 text-gray-600 text-xs">{t.description}</td>
-                          <td className="py-1.5 px-2 text-right text-xs font-bold text-amber-700 whitespace-nowrap">{formatCurrency(t.amount)}</td>
-                        </tr>
-                      ))}
-                      <tr className="border-t border-amber-300 bg-amber-50/60">
-                        <td colSpan={colSpan - 1} className="py-1.5 px-2 text-xs font-bold text-amber-800">Subtotal (Transport)</td>
-                        <td className="py-1.5 px-2 text-right text-xs font-bold text-amber-700">{formatCurrency(totalTransport)}</td>
-                      </tr>
-                    </>
+                    <tr className="border-t border-amber-300 bg-amber-50/60">
+                      <td className="py-1.5 px-2 text-gray-400 text-xs">{otherExpenses.length + 1}</td>
+                      <td className="py-1.5 px-2 text-gray-800 text-xs font-medium whitespace-nowrap" colSpan={showNepaliDates ? 2 : 1}>
+                        {transportExpenses.length > 0 ? `${formatDate(transportExpenses[0].date)} – ${formatDate(transportExpenses[transportExpenses.length - 1].date)}` : "—"}
+                      </td>
+                      <td className="py-1.5 px-2 text-xs">
+                        <span className="flex items-center gap-1">
+                          <Bus className="h-3 w-3 text-amber-700" />
+                          <span className="text-amber-800 font-medium">Daily Transport</span>
+                        </span>
+                      </td>
+                      <td className="py-1.5 px-2 text-amber-800 text-xs font-medium">{transportExpenses.length} days</td>
+                      <td className="py-1.5 px-2 text-right text-xs font-bold text-amber-700 whitespace-nowrap">{formatCurrency(totalTransport)}</td>
+                    </tr>
                   )}
                 </tbody>
                 <tfoot>
