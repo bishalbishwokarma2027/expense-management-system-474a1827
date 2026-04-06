@@ -18,51 +18,117 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch all transactions for context
-    const { data: transactions } = await supabase
-      .from("transactions")
-      .select("*")
-      .order("date", { ascending: false })
-      .limit(500);
+    // Fetch ALL transactions (handle pagination for >1000 rows)
+    let allTransactions: any[] = [];
+    let offset = 0;
+    const pageSize = 1000;
+    while (true) {
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("*")
+        .order("date", { ascending: false })
+        .range(offset, offset + pageSize - 1);
+      if (error || !data || data.length === 0) break;
+      allTransactions = allTransactions.concat(data);
+      if (data.length < pageSize) break;
+      offset += pageSize;
+    }
 
-    const { data: budgets } = await supabase
-      .from("budgets")
-      .select("*");
+    const { data: budgets } = await supabase.from("budgets").select("*");
 
-    const txSummary = transactions?.map(t => 
-      `${t.date} | ${t.type} | ${t.category} | Rs.${t.amount} | ${t.description}`
-    ).join("\n") || "No transactions yet.";
+    // Pre-compute summaries for the AI
+    const today = new Date();
+    const todayStr = today.toISOString().split("T")[0];
+    const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
 
-    const budgetSummary = budgets?.map(b =>
-      `${b.month} | ${b.category} | Limit: Rs.${b.limit}`
-    ).join("\n") || "No budgets set.";
+    // Monthly aggregation
+    const monthlyData: Record<string, { income: number; expense: number; byCategory: Record<string, number> }> = {};
+    for (const t of allTransactions) {
+      const month = t.date.substring(0, 7);
+      if (!monthlyData[month]) monthlyData[month] = { income: 0, expense: 0, byCategory: {} };
+      const amt = Number(t.amount);
+      if (t.type === "income") {
+        monthlyData[month].income += amt;
+      } else {
+        monthlyData[month].expense += amt;
+        monthlyData[month].byCategory[t.category] = (monthlyData[month].byCategory[t.category] || 0) + amt;
+      }
+    }
 
-    const today = new Date().toISOString().split("T")[0];
+    // Current month summary
+    const cm = monthlyData[currentMonth] || { income: 0, expense: 0, byCategory: {} };
+    const categoryBreakdown = Object.entries(cm.byCategory)
+      .sort(([, a], [, b]) => b - a)
+      .map(([cat, amt]) => `  - ${cat}: Rs.${amt.toLocaleString("en-IN")}`)
+      .join("\n");
 
-    const systemPrompt = `You are ExpenseIQ AI Assistant — a smart financial assistant for a personal expense tracker app. You help the user manage their finances.
+    // Overall totals
+    let totalIncome = 0, totalExpense = 0;
+    for (const t of allTransactions) {
+      if (t.type === "income") totalIncome += Number(t.amount);
+      else totalExpense += Number(t.amount);
+    }
 
-## Your Capabilities:
-1. **Analyze spending**: Summarize expenses by category, month, trends, etc.
-2. **Answer questions**: About transactions, budgets, balances, and financial habits.
-3. **Add transactions**: When the user says something like "I spent 500 on food today" or "add income 50000 salary", extract the details and use the add_transaction tool.
-4. **Provide insights**: Spending patterns, budget alerts, saving tips based on their data.
+    // Monthly trend (last 6 months)
+    const sortedMonths = Object.keys(monthlyData).sort().slice(-6);
+    const monthlyTrend = sortedMonths.map(m => {
+      const d = monthlyData[m];
+      return `  ${m}: Income Rs.${d.income.toLocaleString("en-IN")} | Expense Rs.${d.expense.toLocaleString("en-IN")} | Net Rs.${(d.income - d.expense).toLocaleString("en-IN")}`;
+    }).join("\n");
 
-## Current Data:
-Today's date: ${today}
+    // Recent transactions (last 30)
+    const recentTx = allTransactions.slice(0, 30).map(t =>
+      `${t.date.substring(0, 10)} | ${t.type} | ${t.category} | Rs.${Number(t.amount).toLocaleString("en-IN")} | ${t.description}`
+    ).join("\n");
 
-### Recent Transactions (up to 500):
-${txSummary}
+    const budgetSummary = budgets?.map(b => {
+      const spent = monthlyData[b.month]?.byCategory[b.category] || 0;
+      return `${b.month} | ${b.category} | Limit: Rs.${Number(b.limit).toLocaleString("en-IN")} | Spent: Rs.${spent.toLocaleString("en-IN")} | ${spent > Number(b.limit) ? "⚠️ OVER BUDGET" : "OK"}`;
+    }).join("\n") || "No budgets set.";
 
-### Budgets:
+    const systemPrompt = `You are ExpenseIQ AI Assistant — a smart, accurate financial assistant. You help analyze spending data and manage transactions.
+
+## CRITICAL RULES FOR ACCURACY:
+- ALWAYS use the pre-computed summaries below for totals. DO NOT try to add up numbers from the transaction list yourself.
+- When asked "how much did I spend", use the EXACT numbers from the summaries.
+- Currency is Nepali Rupees (Rs. / NPR). Format amounts with Indian-style commas (e.g., Rs.1,50,000).
+
+## Pre-Computed Data (USE THESE FOR ANSWERS):
+
+### Today: ${todayStr}
+### Current Month: ${currentMonth}
+
+### Current Month (${currentMonth}) Summary:
+- Total Income: Rs.${cm.income.toLocaleString("en-IN")}
+- Total Expense: Rs.${cm.expense.toLocaleString("en-IN")}
+- Net Balance: Rs.${(cm.income - cm.expense).toLocaleString("en-IN")}
+- Expense by Category:
+${categoryBreakdown || "  No expenses yet"}
+
+### All-Time Totals:
+- Total Income: Rs.${totalIncome.toLocaleString("en-IN")}
+- Total Expense: Rs.${totalExpense.toLocaleString("en-IN")}
+- Net Balance: Rs.${(totalIncome - totalExpense).toLocaleString("en-IN")}
+- Total Transactions: ${allTransactions.length}
+
+### Monthly Trend (Last 6 months):
+${monthlyTrend || "  No data"}
+
+### Budgets Status:
 ${budgetSummary}
 
-## Rules:
-- Currency is Nepali Rupees (Rs. / NPR). Format amounts with commas Indian-style.
-- When adding a transaction, ALWAYS use the add_transaction tool. Don't just say you added it.
-- For dates, if the user says "today", use ${today}. If "yesterday", calculate accordingly.
-- Be concise but helpful. Use markdown formatting.
+### Recent 30 Transactions:
+${recentTx || "No transactions yet."}
+
+## When Adding Transactions:
+- ALWAYS use the add_transaction tool. Never just say you added it.
+- For "today", use ${todayStr}. For "yesterday", use ${new Date(today.getTime() - 86400000).toISOString().split("T")[0]}.
 - Expense categories: Food & Dining, Transportation, Shopping, Entertainment, Bills & Utilities, Healthcare, Education, Travel, Rent & Housing, Insurance, Subscriptions, Other
-- Income categories: Salary, Freelance, Investment, Business, Rental Income, Other`;
+- Income categories: Salary, Freelance, Investment, Business, Rental Income, Other
+
+## Response Style:
+- Be concise. Use markdown tables for comparisons.
+- For spending questions, show the number prominently and add brief context.`;
 
     const tools = [
       {
@@ -135,12 +201,11 @@ ${budgetSummary}
           if (error) {
             results.push(`Failed to add transaction: ${error.message}`);
           } else {
-            results.push(`✅ Added ${args.type}: Rs.${args.amount} for ${args.category} on ${args.date}`);
+            results.push(`✅ Added ${args.type}: Rs.${Number(args.amount).toLocaleString("en-IN")} for ${args.category} on ${args.date}`);
           }
         }
       }
 
-      // Second call to get natural language response after tool execution
       const followUp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
