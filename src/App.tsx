@@ -11,6 +11,7 @@ import Budgets from "@/pages/Budgets";
 import Transportation from "@/pages/Transportation";
 import TrackExpense from "@/pages/TrackExpense";
 import DayDetail from "@/pages/DayDetail";
+import AIAssistant from "@/pages/AIAssistant";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/transportation" element={<Transportation />} />
             <Route path="/track-expense" element={<TrackExpense />} />
             <Route path="/track-expense/:year/:month/:day" element={<DayDetail />} />
+            <Route path="/ai-assistant" element={<AIAssistant />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
