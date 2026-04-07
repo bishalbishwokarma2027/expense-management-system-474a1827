@@ -103,7 +103,7 @@ export function useTransactions() {
   }, []);
 
   const updateTransaction = useCallback(async (id: string, updates: Partial<Omit<Transaction, "id" | "createdAt">>) => {
-    const dbUpdates: Record<string, unknown> = {};
+    const dbUpdates: { type?: string; amount?: number; category?: string; description?: string; date?: string } = {};
     if (updates.type !== undefined) dbUpdates.type = updates.type;
     if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
     if (updates.category !== undefined) dbUpdates.category = updates.category;
