@@ -21,6 +21,7 @@ export type Database = {
           id: string
           limit: number
           month: string
+          user_id: string | null
         }
         Insert: {
           category: string
@@ -28,6 +29,7 @@ export type Database = {
           id?: string
           limit: number
           month: string
+          user_id?: string | null
         }
         Update: {
           category?: string
@@ -35,6 +37,34 @@ export type Database = {
           id?: string
           limit?: number
           month?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -47,6 +77,7 @@ export type Database = {
           description: string
           id: string
           type: string
+          user_id: string | null
         }
         Insert: {
           amount: number
@@ -56,6 +87,7 @@ export type Database = {
           description?: string
           id?: string
           type: string
+          user_id?: string | null
         }
         Update: {
           amount?: number
@@ -65,6 +97,31 @@ export type Database = {
           description?: string
           id?: string
           type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          visible_sections: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          visible_sections?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          visible_sections?: Json
         }
         Relationships: []
       }

@@ -1,19 +1,23 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, ArrowUpDown, BarChart3, Target, Bus, CalendarDays, Sparkles } from "lucide-react";
+import { LayoutDashboard, ArrowUpDown, BarChart3, Target, Bus, CalendarDays, Sparkles, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSettings, SectionId } from "@/contexts/SettingsContext";
 
-const navItems = [
-  { to: "/", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/transactions", icon: ArrowUpDown, label: "Transactions" },
-  { to: "/reports", icon: BarChart3, label: "Reports" },
-  { to: "/budgets", icon: Target, label: "Budgets" },
-  { to: "/transportation", icon: Bus, label: "Transportation" },
-  { to: "/track-expense", icon: CalendarDays, label: "Track Expense" },
-  { to: "/ai-assistant", icon: Sparkles, label: "AI Assistant" },
+const navItems: { to: string; icon: any; label: string; id: SectionId }[] = [
+  { to: "/", icon: LayoutDashboard, label: "Dashboard", id: "dashboard" },
+  { to: "/transactions", icon: ArrowUpDown, label: "Transactions", id: "transactions" },
+  { to: "/reports", icon: BarChart3, label: "Reports", id: "reports" },
+  { to: "/budgets", icon: Target, label: "Budgets", id: "budgets" },
+  { to: "/transportation", icon: Bus, label: "Transportation", id: "transportation" },
+  { to: "/track-expense", icon: CalendarDays, label: "Track Expense", id: "track-expense" },
+  { to: "/ai-assistant", icon: Sparkles, label: "AI Assistant", id: "ai-assistant" },
 ];
 
 export default function AppSidebar() {
   const location = useLocation();
+  const { visibleSections } = useSettings();
+
+  const filteredItems = navItems.filter((item) => visibleSections.includes(item.id));
 
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-full w-64 flex-col border-r border-border bg-sidebar p-4">
@@ -27,7 +31,7 @@ export default function AppSidebar() {
       </div>
 
       <nav className="flex flex-1 flex-col gap-1">
-        {navItems.map(({ to, icon: Icon, label }) => {
+        {filteredItems.map(({ to, icon: Icon, label }) => {
           const isActive = location.pathname === to;
           return (
             <NavLink
@@ -47,17 +51,31 @@ export default function AppSidebar() {
         })}
       </nav>
 
-      <div className="mt-auto border-t border-border pt-4">
-        <div className="glass-card p-3">
-          <p className="text-xs text-muted-foreground">Real-time tracking</p>
-          <p className="mt-1 text-xs text-primary font-medium">
-            {new Date().toLocaleDateString("en-IN", {
-              weekday: "long",
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
-          </p>
+      <div className="mt-auto space-y-2">
+        <NavLink
+          to="/settings"
+          className={cn(
+            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+            location.pathname === "/settings"
+              ? "bg-primary/10 text-primary glow-primary"
+              : "text-muted-foreground hover:bg-accent hover:text-foreground"
+          )}
+        >
+          <Settings className="h-4 w-4" />
+          Settings
+        </NavLink>
+        <div className="border-t border-border pt-4">
+          <div className="glass-card p-3">
+            <p className="text-xs text-muted-foreground">Real-time tracking</p>
+            <p className="mt-1 text-xs text-primary font-medium">
+              {new Date().toLocaleDateString("en-IN", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </p>
+          </div>
         </div>
       </div>
     </aside>

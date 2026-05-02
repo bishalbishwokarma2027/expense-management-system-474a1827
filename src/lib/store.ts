@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export type TransactionType = "income" | "expense";
 
@@ -9,7 +10,7 @@ export interface Transaction {
   amount: number;
   category: string;
   description: string;
-  date: string; // ISO string
+  date: string;
   createdAt: string;
 }
 
@@ -17,7 +18,7 @@ export interface Budget {
   id: string;
   category: string;
   limit: number;
-  month: string; // YYYY-MM
+  month: string;
 }
 
 export const EXPENSE_CATEGORIES = [
@@ -44,7 +45,6 @@ export const INCOME_CATEGORIES = [
   { name: "Other", icon: "💵", color: "hsl(0, 0%, 50%)" },
 ];
 
-// Custom event for cross-component reactivity
 const STORAGE_EVENT = "expense-tracker-update";
 
 function emitUpdate() {
@@ -65,16 +65,19 @@ function mapRow(row: { id: string; type: string; amount: number; category: strin
 
 export function useTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const { user } = useAuth();
 
   const fetchTransactions = useCallback(async () => {
+    if (!user) return;
     const { data, error } = await supabase
       .from("transactions")
       .select("*")
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     if (!error && data) {
       setTransactions(data.map(mapRow));
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     fetchTransactions();
@@ -84,6 +87,7 @@ export function useTransactions() {
   }, [fetchTransactions]);
 
   const addTransaction = useCallback(async (t: Omit<Transaction, "id" | "createdAt">) => {
+    if (!user) return null;
     const { data, error } = await supabase
       .from("transactions")
       .insert({
@@ -92,6 +96,7 @@ export function useTransactions() {
         category: t.category,
         description: t.description || t.category,
         date: t.date,
+        user_id: user.id,
       })
       .select()
       .single();
@@ -100,7 +105,7 @@ export function useTransactions() {
       return mapRow(data);
     }
     return null;
-  }, []);
+  }, [user]);
 
   const updateTransaction = useCallback(async (id: string, updates: Partial<Omit<Transaction, "id" | "createdAt">>) => {
     const dbUpdates: { type?: string; amount?: number; category?: string; description?: string; date?: string } = {};
@@ -123,11 +128,14 @@ export function useTransactions() {
 
 export function useBudgets() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
+  const { user } = useAuth();
 
   const fetchBudgets = useCallback(async () => {
+    if (!user) return;
     const { data, error } = await supabase
       .from("budgets")
       .select("*")
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     if (!error && data) {
       setBudgets(
@@ -139,7 +147,7 @@ export function useBudgets() {
         }))
       );
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     fetchBudgets();
@@ -149,26 +157,28 @@ export function useBudgets() {
   }, [fetchBudgets]);
 
   const setBudget = useCallback(async (category: string, limit: number, month: string) => {
-    // Check if budget exists for this category+month
+    if (!user) return;
     const { data: existing } = await supabase
       .from("budgets")
       .select("id")
       .eq("category", category)
       .eq("month", month)
+      .eq("user_id", user.id)
       .maybeSingle();
 
     if (existing) {
       await supabase.from("budgets").update({ limit }).eq("id", existing.id);
     } else {
-      await supabase.from("budgets").insert({ category, limit, month });
+      await supabase.from("budgets").insert({ category, limit, month, user_id: user.id });
     }
     emitUpdate();
-  }, []);
+  }, [user]);
 
   const deleteBudget = useCallback(async (category: string, month: string) => {
-    await supabase.from("budgets").delete().eq("category", category).eq("month", month);
+    if (!user) return;
+    await supabase.from("budgets").delete().eq("category", category).eq("month", month).eq("user_id", user.id);
     emitUpdate();
-  }, []);
+  }, [user]);
 
   return { budgets, setBudget, deleteBudget };
 }
