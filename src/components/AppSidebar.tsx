@@ -2,7 +2,6 @@ import { NavLink, useLocation } from "react-router-dom";
 import { LayoutDashboard, ArrowUpDown, BarChart3, Target, Bus, CalendarDays, Sparkles, Settings, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSettings, SectionId } from "@/contexts/SettingsContext";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 const navItems: { to: string; icon: any; label: string; id: SectionId }[] = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", id: "dashboard" },
@@ -21,16 +20,11 @@ interface AppSidebarProps {
 export default function AppSidebar({ onClose }: AppSidebarProps) {
   const location = useLocation();
   const { visibleSections } = useSettings();
-  const isMobile = useIsMobile();
 
   const filteredItems = navItems.filter((item) => visibleSections.includes(item.id));
 
-  const handleNavClick = () => {
-    if (isMobile && onClose) onClose();
-  };
-
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-border bg-sidebar p-4 fixed left-0 top-0 z-40">
+    <aside className="flex h-full w-64 flex-col border-r border-border bg-sidebar p-4">
       <div className="mb-8 flex items-center justify-between px-3">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-heading font-bold text-sm">
@@ -40,11 +34,9 @@ export default function AppSidebar({ onClose }: AppSidebarProps) {
             ExpenseIQ
           </h1>
         </div>
-        {isMobile && (
-          <button onClick={onClose} className="p-1.5 rounded-md hover:bg-accent transition-colors">
-            <X className="h-5 w-5 text-muted-foreground" />
-          </button>
-        )}
+        <button onClick={onClose} className="p-1.5 rounded-md hover:bg-accent transition-colors md:hidden">
+          <X className="h-5 w-5 text-muted-foreground" />
+        </button>
       </div>
 
       <nav className="flex flex-1 flex-col gap-1">
@@ -54,7 +46,7 @@ export default function AppSidebar({ onClose }: AppSidebarProps) {
             <NavLink
               key={to}
               to={to}
-              onClick={handleNavClick}
+              onClick={onClose}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                 isActive
@@ -72,7 +64,7 @@ export default function AppSidebar({ onClose }: AppSidebarProps) {
       <div className="mt-auto space-y-2">
         <NavLink
           to="/settings"
-          onClick={handleNavClick}
+          onClick={onClose}
           className={cn(
             "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
             location.pathname === "/settings"
