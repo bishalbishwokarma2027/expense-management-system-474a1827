@@ -34,30 +34,19 @@ export default function Auth() {
   };
 
   const isLovableHosted = window.location.hostname.endsWith('.lovable.app') || 
-    window.location.hostname.endsWith('.lovableproject.com');
+    window.location.hostname.endsWith('.lovableproject.com') ||
+    window.location.hostname === 'localhost';
 
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      if (isLovableHosted) {
-        // Use managed OAuth on Lovable hosting
-        const result = await lovable.auth.signInWithOAuth("google", {
-          redirect_uri: window.location.origin,
-        });
-        if (result.error) {
-          toast({ title: "Error", description: String(result.error), variant: "destructive" });
-        }
-        if (result.redirected) return;
-      } else {
-        // Use direct Supabase OAuth on external hosts (Vercel, etc.)
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo: window.location.origin,
-          },
-        });
-        if (error) throw error;
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) {
+        toast({ title: "Error", description: String(result.error), variant: "destructive" });
       }
+      if (result.redirected) return;
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
