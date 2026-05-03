@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, ArrowUpDown, BarChart3, Target, Bus, CalendarDays, Sparkles, Settings } from "lucide-react";
+import { LayoutDashboard, ArrowUpDown, BarChart3, Target, Bus, CalendarDays, Sparkles, Settings, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSettings, SectionId } from "@/contexts/SettingsContext";
 
@@ -13,21 +13,30 @@ const navItems: { to: string; icon: any; label: string; id: SectionId }[] = [
   { to: "/ai-assistant", icon: Sparkles, label: "AI Assistant", id: "ai-assistant" },
 ];
 
-export default function AppSidebar() {
+interface AppSidebarProps {
+  onClose?: () => void;
+}
+
+export default function AppSidebar({ onClose }: AppSidebarProps) {
   const location = useLocation();
   const { visibleSections } = useSettings();
 
   const filteredItems = navItems.filter((item) => visibleSections.includes(item.id));
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-full w-64 flex-col border-r border-border bg-sidebar p-4">
-      <div className="mb-8 flex items-center gap-3 px-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-heading font-bold text-sm">
-          ₹
+    <aside className="flex h-full w-64 flex-col border-r border-border bg-sidebar p-4">
+      <div className="mb-8 flex items-center justify-between px-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-heading font-bold text-sm">
+            ₹
+          </div>
+          <h1 className="font-heading text-lg font-bold text-foreground tracking-tight">
+            ExpenseIQ
+          </h1>
         </div>
-        <h1 className="font-heading text-lg font-bold text-foreground tracking-tight">
-          ExpenseIQ
-        </h1>
+        <button onClick={onClose} className="p-1.5 rounded-md hover:bg-accent transition-colors md:hidden">
+          <X className="h-5 w-5 text-muted-foreground" />
+        </button>
       </div>
 
       <nav className="flex flex-1 flex-col gap-1">
@@ -37,6 +46,7 @@ export default function AppSidebar() {
             <NavLink
               key={to}
               to={to}
+              onClick={onClose}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                 isActive
@@ -54,6 +64,7 @@ export default function AppSidebar() {
       <div className="mt-auto space-y-2">
         <NavLink
           to="/settings"
+          onClick={onClose}
           className={cn(
             "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
             location.pathname === "/settings"
