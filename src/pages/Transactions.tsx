@@ -18,7 +18,16 @@ export default function Transactions() {
       if (categoryFilter !== "all" && t.category !== categoryFilter) return false;
       if (search) {
         const q = search.toLowerCase();
-        return t.description.toLowerCase().includes(q) || t.category.toLowerCase().includes(q);
+        return [
+          t.description,
+          t.category,
+          t.type,
+          String(t.amount),
+          new Date(t.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(q);
       }
       return true;
     });
