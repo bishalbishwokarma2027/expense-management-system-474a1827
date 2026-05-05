@@ -34,9 +34,6 @@ export default function Auth() {
     }
   };
 
-  const isLovableHosted = window.location.hostname.endsWith('.lovable.app') || 
-    window.location.hostname.endsWith('.lovableproject.com') ||
-    window.location.hostname === 'localhost';
 
   const handleGoogleLogin = async () => {
     setLoading(true);
