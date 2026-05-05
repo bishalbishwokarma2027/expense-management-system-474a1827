@@ -104,7 +104,7 @@ export default function AIAssistant() {
               <Bot className="h-8 w-8 text-primary" />
             </div>
             <h2 className="text-lg font-semibold text-foreground mb-1">
-              Hi! I'm your ExpenseIQ Assistant
+              Hi! I'm your Expense Tracker Assistant
             </h2>
             <p className="text-sm text-muted-foreground mb-6 max-w-md">
               I can analyze your spending, add transactions, track budgets, and give you financial insights — all through natural conversation.
