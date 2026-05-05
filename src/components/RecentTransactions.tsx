@@ -72,7 +72,7 @@ export default function RecentTransactions({ limit, showDelete = false, transact
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary"
+                      className="h-7 w-7 text-muted-foreground transition-opacity hover:text-primary sm:opacity-0 sm:group-hover:opacity-100"
                       onClick={() => setEditingTx(t)}
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -80,7 +80,7 @@ export default function RecentTransactions({ limit, showDelete = false, transact
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-expense"
+                      className="h-7 w-7 text-muted-foreground transition-opacity hover:text-expense sm:opacity-0 sm:group-hover:opacity-100"
                       onClick={() => deleteTransaction(t.id)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
