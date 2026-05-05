@@ -20,11 +20,11 @@ export default function Layout() {
   const nepaliDate = formatNepaliDate(today);
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen overflow-x-hidden bg-background">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          className="fixed inset-0 z-30 bg-foreground/50 md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -38,12 +38,13 @@ export default function Layout() {
         <AppSidebar onClose={() => setSidebarOpen(false)} />
       </div>
 
-      <main className="flex-1 ml-0 md:ml-64 p-4 sm:p-6 lg:p-8">
-        <div className="mb-6 flex items-center justify-between border-b border-border pb-4 gap-2">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <main className="ml-0 w-full min-w-0 flex-1 p-3 sm:p-6 md:ml-64 lg:p-8">
+        <div className="mb-6 flex items-center justify-between gap-2 border-b border-border pb-4">
+          <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="mr-1 p-1.5 rounded-md border border-border hover:bg-accent transition-colors md:hidden"
+              className="mr-1 shrink-0 p-1.5 rounded-md border border-border hover:bg-accent transition-colors md:hidden"
+              aria-label="Open menu"
             >
               <Menu className="h-5 w-5" />
             </button>

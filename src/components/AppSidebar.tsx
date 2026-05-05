@@ -2,6 +2,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { LayoutDashboard, ArrowUpDown, BarChart3, Target, Bus, CalendarDays, Sparkles, Settings, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSettings, SectionId } from "@/contexts/SettingsContext";
+import logo from "@/assets/expense-tracker-logo.png";
 
 const navItems: { to: string; icon: any; label: string; id: SectionId }[] = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", id: "dashboard" },
@@ -27,11 +28,9 @@ export default function AppSidebar({ onClose }: AppSidebarProps) {
     <aside className="flex h-full w-64 flex-col border-r border-border bg-sidebar p-4">
       <div className="mb-8 flex items-center justify-between px-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-heading font-bold text-sm">
-            ₹
-          </div>
+          <img src={logo} alt="Expense Tracker logo" className="h-10 w-10 rounded-lg object-contain" />
           <h1 className="font-heading text-lg font-bold text-foreground tracking-tight">
-            ExpenseIQ
+            Expense Tracker
           </h1>
         </div>
         <button onClick={onClose} className="p-1.5 rounded-md hover:bg-accent transition-colors md:hidden">

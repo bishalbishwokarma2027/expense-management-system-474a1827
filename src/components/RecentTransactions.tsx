@@ -10,11 +10,13 @@ import EditTransactionDialog from "@/components/EditTransactionDialog";
 interface Props {
   limit?: number;
   showDelete?: boolean;
+  transactionsOverride?: Transaction[];
 }
 
-export default function RecentTransactions({ limit, showDelete = false }: Props) {
+export default function RecentTransactions({ limit, showDelete = false, transactionsOverride }: Props) {
   const { transactions, deleteTransaction } = useTransactions();
-  const displayed = limit ? transactions.slice(0, limit) : transactions;
+  const sourceTransactions = transactionsOverride ?? transactions;
+  const displayed = limit ? sourceTransactions.slice(0, limit) : sourceTransactions;
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
 
   if (displayed.length === 0) {
@@ -46,15 +48,15 @@ export default function RecentTransactions({ limit, showDelete = false }: Props)
                 <p className="text-sm font-medium text-foreground truncate">
                   {t.description}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground truncate">
                   {t.category} · {formatDate(t.date)}
                   <span className="text-primary/70 ml-1">· {formatNepaliDateFromISO(t.date)}</span>
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex shrink-0 items-center gap-1 sm:gap-2">
                 <span
                   className={cn(
-                    "text-sm font-heading font-semibold",
+                    "text-right text-xs font-heading font-semibold sm:text-sm",
                     t.type === "income" ? "text-income" : "text-expense"
                   )}
                 >
@@ -70,7 +72,7 @@ export default function RecentTransactions({ limit, showDelete = false }: Props)
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary"
+                      className="h-7 w-7 text-muted-foreground transition-opacity hover:text-primary sm:opacity-0 sm:group-hover:opacity-100"
                       onClick={() => setEditingTx(t)}
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -78,7 +80,7 @@ export default function RecentTransactions({ limit, showDelete = false }: Props)
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-expense"
+                      className="h-7 w-7 text-muted-foreground transition-opacity hover:text-expense sm:opacity-0 sm:group-hover:opacity-100"
                       onClick={() => deleteTransaction(t.id)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />

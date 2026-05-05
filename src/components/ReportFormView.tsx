@@ -234,7 +234,7 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
         {/* Footer */}
         <div className="px-8 py-3 border-t-2 border-gray-300 bg-gray-50 flex items-center justify-between">
           <p className="text-[11px] text-gray-500">
-            Generated {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })} — ExpenseIQ
+            Generated {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })} — Expense Tracker
           </p>
           <div className="flex items-center gap-3">
             <span className="text-sm font-bold text-gray-700">Net Balance:</span>

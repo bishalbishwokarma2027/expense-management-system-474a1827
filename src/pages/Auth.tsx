@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, LogIn, UserPlus } from "lucide-react";
+import logo from "@/assets/expense-tracker-logo.png";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -59,10 +60,8 @@ export default function Auth() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-xl">
-              ₹
-            </div>
-            <h1 className="text-3xl font-bold text-foreground tracking-tight">ExpenseIQ</h1>
+            <img src={logo} alt="Expense Tracker logo" className="h-14 w-14 rounded-xl object-contain" />
+            <h1 className="text-3xl font-bold text-foreground tracking-tight">Expense Tracker</h1>
           </div>
           <p className="text-muted-foreground">Track your expenses smartly</p>
         </div>

@@ -18,7 +18,16 @@ export default function Transactions() {
       if (categoryFilter !== "all" && t.category !== categoryFilter) return false;
       if (search) {
         const q = search.toLowerCase();
-        return t.description.toLowerCase().includes(q) || t.category.toLowerCase().includes(q);
+        return [
+          t.description,
+          t.category,
+          t.type,
+          String(t.amount),
+          new Date(t.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(q);
       }
       return true;
     });
@@ -29,8 +38,8 @@ export default function Transactions() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="font-heading text-2xl font-bold text-foreground">Transactions</h1>
           <p className="text-sm text-muted-foreground">
             {filtered.length} transactions · Net: {formatCurrency(total)}
@@ -39,7 +48,7 @@ export default function Transactions() {
         <AddTransactionDialog />
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_130px_180px]">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -50,7 +59,7 @@ export default function Transactions() {
           />
         </div>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-[130px]">
+          <SelectTrigger className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -60,7 +69,7 @@ export default function Transactions() {
           </SelectContent>
         </Select>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -76,7 +85,7 @@ export default function Transactions() {
 
       <div className="glass-card p-4">
         {filtered.length > 0 ? (
-          <RecentTransactions showDelete />
+          <RecentTransactions showDelete transactionsOverride={filtered} />
         ) : (
           <div className="py-12 text-center text-sm text-muted-foreground">
             No transactions match your filters
