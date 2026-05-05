@@ -104,7 +104,7 @@ export default function Auth() {
             </Button>
           </form>
 
-          {isLovableHosted && (
+          {(
             <>
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
