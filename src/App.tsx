@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,6 +20,21 @@ import Auth from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
+
+function RedirectRestorer() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const redirectPath = sessionStorage.getItem("spa_redirect_path");
+    if (redirectPath && location.pathname === "/") {
+      sessionStorage.removeItem("spa_redirect_path");
+      navigate(redirectPath, { replace: true });
+    }
+  }, [location.pathname, navigate]);
+
+  return null;
+}
 
 function ProtectedRoutes() {
   const { user, loading } = useAuth();
@@ -72,6 +88,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <RedirectRestorer />
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />
