@@ -34,9 +34,6 @@ export default function Auth() {
     }
   };
 
-  const isLovableHosted = window.location.hostname.endsWith('.lovable.app') || 
-    window.location.hostname.endsWith('.lovableproject.com') ||
-    window.location.hostname === 'localhost';
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -107,7 +104,7 @@ export default function Auth() {
             </Button>
           </form>
 
-          {isLovableHosted && (
+          {(
             <>
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
