@@ -22,6 +22,9 @@ const createOAuthState = () => {
   return `${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
 };
 
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : String(error);
+
 const signInWithGoogleOnExternalHost = () => {
   const state = createOAuthState();
   const params = new URLSearchParams({
@@ -123,8 +126,8 @@ export default function Auth() {
         if (error) throw error;
         toast({ title: "Account created!", description: "You are now signed in." });
       }
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      toast({ title: "Error", description: getErrorMessage(error), variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -149,8 +152,8 @@ export default function Auth() {
         const { error } = await supabase.auth.setSession(tokens);
         if (error) throw error;
       }
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      toast({ title: "Error", description: getErrorMessage(error), variant: "destructive" });
     } finally {
       setLoading(false);
     }
