@@ -27,10 +27,13 @@ const getErrorMessage = (error: unknown) =>
 
 const signInWithGoogleOnExternalHost = () => {
   const state = createOAuthState();
+  const redirectUri = `${LOVABLE_PREVIEW_ORIGIN}/auth?google_oauth_bridge=1&target_origin=${encodeURIComponent(
+    window.location.origin
+  )}`;
   const params = new URLSearchParams({
     provider: "google",
     project_id: LOVABLE_PROJECT_ID,
-    redirect_uri: LOVABLE_PREVIEW_ORIGIN,
+    redirect_uri: redirectUri,
     response_mode: "web_message",
     state,
     prompt: "select_account",
