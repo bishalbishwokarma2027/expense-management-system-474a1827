@@ -131,12 +131,24 @@ export default function Reports() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Reports</h1>
-          <p className="text-sm text-muted-foreground">{periodLabel} — Financial Summary</p>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground">Reports</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">{periodLabel} — Financial Summary</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowReportForm(true)}
+            className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10 shrink-0"
+          >
+            <FileText className="h-4 w-4" />
+            <span className="hidden sm:inline">In Report Form</span>
+            <span className="sm:hidden">Report</span>
+          </Button>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-wrap gap-2 items-center">
           <div className="flex rounded-lg border border-border overflow-hidden">
             <Button
               variant="ghost"
@@ -157,7 +169,7 @@ export default function Reports() {
           </div>
           {view === "monthly" && (
             <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger className="w-[130px]">
+              <SelectTrigger className="w-[110px] sm:w-[130px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -168,7 +180,7 @@ export default function Reports() {
             </Select>
           )}
           <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-[100px]">
+            <SelectTrigger className="w-[90px] sm:w-[100px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -177,15 +189,6 @@ export default function Reports() {
               ))}
             </SelectContent>
           </Select>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowReportForm(true)}
-            className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
-          >
-            <FileText className="h-4 w-4" />
-            In Report Form
-          </Button>
         </div>
       </div>
 
