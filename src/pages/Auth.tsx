@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,9 @@ const createOAuthState = () => {
 
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : String(error);
+
+const isGoogleOAuthBridge = () =>
+  new URLSearchParams(window.location.search).get("google_oauth_bridge") === "1";
 
 const signInWithGoogleOnExternalHost = () => {
   const state = createOAuthState();
@@ -116,6 +119,32 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  useEffect(() => {
+    if (!isGoogleOAuthBridge()) return;
+
+    const url = new URL(window.location.href);
+    const targetOrigin = url.searchParams.get("target_origin") || "*";
+    const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+    const queryParams = url.searchParams;
+    const readParam = (key: string) => hashParams.get(key) || queryParams.get(key) || undefined;
+
+    window.opener?.postMessage(
+      {
+        type: "expense_tracker_google_oauth",
+        response: {
+          state: readParam("state"),
+          error: readParam("error"),
+          error_description: readParam("error_description"),
+          access_token: readParam("access_token"),
+          refresh_token: readParam("refresh_token"),
+        },
+      },
+      targetOrigin
+    );
+
+    window.close();
+  }, []);
+
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -160,6 +189,14 @@ export default function Auth() {
       setLoading(false);
     }
   };
+
+  if (isGoogleOAuthBridge()) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4 text-center text-muted-foreground">
+        Completing Google sign-in...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
