@@ -8,6 +8,102 @@ import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, LogIn, UserPlus } from "lucide-react";
 import logo from "@/assets/expense-tracker-logo.png";
 
+const LOVABLE_PROJECT_ID = "310bd86f-93f1-43f7-8612-8e02c10e4069";
+const LOVABLE_PREVIEW_ORIGIN = `https://id-preview--${LOVABLE_PROJECT_ID}.lovable.app`;
+const OAUTH_BROKER_ORIGIN = "https://oauth.lovable.app";
+
+const createOAuthState = () => {
+  if (window.crypto?.getRandomValues) {
+    return Array.from(window.crypto.getRandomValues(new Uint8Array(16)))
+      .map((value) => value.toString(16).padStart(2, "0"))
+      .join("");
+  }
+
+  return `${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+};
+
+const signInWithGoogleOnExternalHost = () => {
+  const state = createOAuthState();
+  const params = new URLSearchParams({
+    provider: "google",
+    project_id: LOVABLE_PROJECT_ID,
+    redirect_uri: LOVABLE_PREVIEW_ORIGIN,
+    response_mode: "web_message",
+    state,
+    prompt: "select_account",
+  });
+
+  const popup = window.open(
+    `${OAUTH_BROKER_ORIGIN}/initiate?${params.toString()}`,
+    "expense-tracker-google-login",
+    "width=520,height=680,left=120,top=80"
+  );
+
+  return new Promise<{ access_token: string; refresh_token: string }>((resolve, reject) => {
+    if (!popup) {
+      reject(new Error("Popup was blocked. Please allow popups and try again."));
+      return;
+    }
+
+    const cleanup = () => {
+      window.removeEventListener("message", handleMessage);
+      window.clearInterval(closeWatcher);
+    };
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== OAUTH_BROKER_ORIGIN) return;
+
+      const data = event.data as {
+        type?: string;
+        response?: {
+          state?: string;
+          error?: string;
+          error_description?: string;
+          access_token?: string;
+          refresh_token?: string;
+        };
+      };
+
+      if (data?.type !== "authorization_response") return;
+
+      const response = data.response;
+      if (response?.state !== state) {
+        cleanup();
+        popup.close();
+        reject(new Error("Google sign-in state did not match. Please try again."));
+        return;
+      }
+
+      if (response.error) {
+        cleanup();
+        popup.close();
+        reject(new Error(response.error_description || response.error));
+        return;
+      }
+
+      if (!response.access_token || !response.refresh_token) {
+        cleanup();
+        popup.close();
+        reject(new Error("Google sign-in did not return a session. Please try again."));
+        return;
+      }
+
+      cleanup();
+      popup.close();
+      resolve({ access_token: response.access_token, refresh_token: response.refresh_token });
+    };
+
+    const closeWatcher = window.setInterval(() => {
+      if (popup.closed) {
+        cleanup();
+        reject(new Error("Google sign-in was cancelled."));
+      }
+    }, 500);
+
+    window.addEventListener("message", handleMessage);
+  });
+};
+
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
@@ -38,13 +134,21 @@ export default function Auth() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-      });
-      if (result.error) {
-        toast({ title: "Error", description: String(result.error), variant: "destructive" });
+      const isLovableHosted = window.location.hostname.endsWith(".lovable.app");
+
+      if (isLovableHosted) {
+        const result = await lovable.auth.signInWithOAuth("google", {
+          redirect_uri: window.location.origin,
+          extraParams: { prompt: "select_account" },
+        });
+
+        if (result.error) throw result.error;
+        if (result.redirected) return;
+      } else {
+        const tokens = await signInWithGoogleOnExternalHost();
+        const { error } = await supabase.auth.setSession(tokens);
+        if (error) throw error;
       }
-      if (result.redirected) return;
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
