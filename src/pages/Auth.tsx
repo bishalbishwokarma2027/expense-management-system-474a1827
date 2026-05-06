@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
@@ -8,12 +8,142 @@ import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, LogIn, UserPlus } from "lucide-react";
 import logo from "@/assets/expense-tracker-logo.png";
 
+const LOVABLE_PROJECT_ID = "310bd86f-93f1-43f7-8612-8e02c10e4069";
+const LOVABLE_PREVIEW_ORIGIN = `https://id-preview--${LOVABLE_PROJECT_ID}.lovable.app`;
+const OAUTH_BROKER_ORIGIN = "https://oauth.lovable.app";
+
+const createOAuthState = () => {
+  if (window.crypto?.getRandomValues) {
+    return Array.from(window.crypto.getRandomValues(new Uint8Array(16)))
+      .map((value) => value.toString(16).padStart(2, "0"))
+      .join("");
+  }
+
+  return `${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+};
+
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : String(error);
+
+const isGoogleOAuthBridge = () =>
+  new URLSearchParams(window.location.search).get("google_oauth_bridge") === "1";
+
+const signInWithGoogleOnExternalHost = () => {
+  const state = createOAuthState();
+  const redirectUri = `${LOVABLE_PREVIEW_ORIGIN}/auth?google_oauth_bridge=1&target_origin=${encodeURIComponent(
+    window.location.origin
+  )}`;
+  const params = new URLSearchParams({
+    provider: "google",
+    project_id: LOVABLE_PROJECT_ID,
+    redirect_uri: redirectUri,
+    state,
+    prompt: "select_account",
+  });
+
+  const popup = window.open(
+    `${OAUTH_BROKER_ORIGIN}/initiate?${params.toString()}`,
+    "expense-tracker-google-login",
+    "width=520,height=680,left=120,top=80"
+  );
+
+  return new Promise<{ access_token: string; refresh_token: string }>((resolve, reject) => {
+    if (!popup) {
+      reject(new Error("Popup was blocked. Please allow popups and try again."));
+      return;
+    }
+
+    const cleanup = () => {
+      window.removeEventListener("message", handleMessage);
+      window.clearInterval(closeWatcher);
+    };
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== LOVABLE_PREVIEW_ORIGIN) return;
+
+      const data = event.data as {
+        type?: string;
+        response?: {
+          state?: string;
+          error?: string;
+          error_description?: string;
+          access_token?: string;
+          refresh_token?: string;
+        };
+      };
+
+      if (data?.type !== "expense_tracker_google_oauth") return;
+
+      const response = data.response;
+      if (response?.state !== state) {
+        cleanup();
+        popup.close();
+        reject(new Error("Google sign-in state did not match. Please try again."));
+        return;
+      }
+
+      if (response.error) {
+        cleanup();
+        popup.close();
+        reject(new Error(response.error_description || response.error));
+        return;
+      }
+
+      if (!response.access_token || !response.refresh_token) {
+        cleanup();
+        popup.close();
+        reject(new Error("Google sign-in did not return a session. Please try again."));
+        return;
+      }
+
+      cleanup();
+      popup.close();
+      resolve({ access_token: response.access_token, refresh_token: response.refresh_token });
+    };
+
+    const closeWatcher = window.setInterval(() => {
+      if (popup.closed) {
+        cleanup();
+        reject(new Error("Google sign-in was cancelled."));
+      }
+    }, 500);
+
+    window.addEventListener("message", handleMessage);
+  });
+};
+
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!isGoogleOAuthBridge()) return;
+
+    const url = new URL(window.location.href);
+    const targetOrigin = url.searchParams.get("target_origin") || "*";
+    const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+    const queryParams = url.searchParams;
+    const readParam = (key: string) => hashParams.get(key) || queryParams.get(key) || undefined;
+
+    window.opener?.postMessage(
+      {
+        type: "expense_tracker_google_oauth",
+        response: {
+          state: readParam("state"),
+          error: readParam("error"),
+          error_description: readParam("error_description"),
+          access_token: readParam("access_token"),
+          refresh_token: readParam("refresh_token"),
+        },
+      },
+      targetOrigin
+    );
+
+    window.close();
+  }, []);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,8 +157,8 @@ export default function Auth() {
         if (error) throw error;
         toast({ title: "Account created!", description: "You are now signed in." });
       }
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      toast({ title: "Error", description: getErrorMessage(error), variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -38,19 +168,35 @@ export default function Auth() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-      });
-      if (result.error) {
-        toast({ title: "Error", description: String(result.error), variant: "destructive" });
+      const isLovableHosted = window.location.hostname.endsWith(".lovable.app");
+
+      if (isLovableHosted) {
+        const result = await lovable.auth.signInWithOAuth("google", {
+          redirect_uri: window.location.origin,
+          extraParams: { prompt: "select_account" },
+        });
+
+        if (result.error) throw result.error;
+        if (result.redirected) return;
+      } else {
+        const tokens = await signInWithGoogleOnExternalHost();
+        const { error } = await supabase.auth.setSession(tokens);
+        if (error) throw error;
       }
-      if (result.redirected) return;
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      toast({ title: "Error", description: getErrorMessage(error), variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
+
+  if (isGoogleOAuthBridge()) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4 text-center text-muted-foreground">
+        Completing Google sign-in...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
