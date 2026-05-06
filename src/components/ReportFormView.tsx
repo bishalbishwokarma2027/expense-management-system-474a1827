@@ -77,40 +77,40 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
         </div>
 
         {/* Header */}
-        <div className="border-b-2 border-gray-300 px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <FileText className="h-6 w-6 text-blue-600" />
+        <div className="border-b-2 border-gray-300 px-4 sm:px-8 py-4">
+          <div className="flex items-center gap-3 mb-3">
+            <FileText className="h-6 w-6 text-blue-600 shrink-0" />
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Financial Report</h2>
+              <h2 className="text-base sm:text-lg font-bold text-gray-900">Financial Report</h2>
               <p className="text-xs text-gray-500">{periodLabel}</p>
             </div>
           </div>
-          <div className="flex gap-6 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:gap-6 gap-3 text-center">
             {previousBalance > 0 && (
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{previousBalanceLabel}</p>
-                <p className="text-base font-bold text-blue-700">{formatCurrency(previousBalance)}</p>
+              <div className="bg-blue-50 rounded-lg p-2 lg:bg-transparent lg:p-0">
+                <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-gray-400">{previousBalanceLabel}</p>
+                <p className="text-sm sm:text-base font-bold text-blue-700">{formatCurrency(previousBalance)}</p>
               </div>
             )}
-            <div className={previousBalance > 0 ? "border-l border-gray-200 pl-6" : ""}>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Income</p>
-              <p className="text-base font-bold text-emerald-700">{formatCurrency(totalIncome)}</p>
+            <div className="bg-emerald-50 rounded-lg p-2 lg:bg-transparent lg:p-0">
+              <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-gray-400">Income</p>
+              <p className="text-sm sm:text-base font-bold text-emerald-700">{formatCurrency(totalIncome)}</p>
             </div>
-            <div className="border-l border-gray-200 pl-6">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Other Expenses</p>
-              <p className="text-base font-bold text-rose-700">{formatCurrency(totalOtherExpense)}</p>
+            <div className="bg-rose-50 rounded-lg p-2 lg:bg-transparent lg:p-0">
+              <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-gray-400">Other Expenses</p>
+              <p className="text-sm sm:text-base font-bold text-rose-700">{formatCurrency(totalOtherExpense)}</p>
             </div>
-            <div className="border-l border-gray-200 pl-6">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Transport</p>
-              <p className="text-base font-bold text-amber-700">{formatCurrency(totalTransport)}</p>
+            <div className="bg-amber-50 rounded-lg p-2 lg:bg-transparent lg:p-0">
+              <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-gray-400">Transport</p>
+              <p className="text-sm sm:text-base font-bold text-amber-700">{formatCurrency(totalTransport)}</p>
             </div>
-            <div className="border-l border-gray-200 pl-6">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Grand Total Expense</p>
-              <p className="text-base font-bold text-rose-700">{formatCurrency(totalExpense)}</p>
+            <div className="bg-rose-50 rounded-lg p-2 lg:bg-transparent lg:p-0">
+              <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-gray-400">Total Expense</p>
+              <p className="text-sm sm:text-base font-bold text-rose-700">{formatCurrency(totalExpense)}</p>
             </div>
-            <div className="border-l border-gray-200 pl-6">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Net Balance</p>
-              <p className={`text-base font-bold ${netBalance >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
+            <div className="bg-gray-50 rounded-lg p-2 lg:bg-transparent lg:p-0">
+              <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-gray-400">Net Balance</p>
+              <p className={`text-sm sm:text-base font-bold ${netBalance >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
                 {formatCurrency(netBalance)}
               </p>
             </div>
@@ -118,7 +118,7 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
         </div>
 
         {/* Two-column tables */}
-        <div className="grid grid-cols-2 divide-x divide-gray-200" style={{ maxHeight: "calc(100vh - 360px)", overflow: "auto" }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 md:divide-x divide-gray-200" style={{ maxHeight: "calc(100vh - 360px)", overflow: "auto" }}>
           
           {/* Income side - includes prev balance */}
           <div>
@@ -232,7 +232,7 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-3 border-t-2 border-gray-300 bg-gray-50 flex items-center justify-between">
+        <div className="px-4 sm:px-8 py-3 border-t-2 border-gray-300 bg-gray-50 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className="text-[11px] text-gray-500">
             Generated {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })} — Expense Tracker
           </p>
