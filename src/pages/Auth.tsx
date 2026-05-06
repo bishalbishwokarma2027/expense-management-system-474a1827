@@ -34,7 +34,6 @@ const signInWithGoogleOnExternalHost = () => {
     provider: "google",
     project_id: LOVABLE_PROJECT_ID,
     redirect_uri: redirectUri,
-    response_mode: "web_message",
     state,
     prompt: "select_account",
   });
@@ -57,7 +56,7 @@ const signInWithGoogleOnExternalHost = () => {
     };
 
     const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== OAUTH_BROKER_ORIGIN) return;
+      if (event.origin !== LOVABLE_PREVIEW_ORIGIN) return;
 
       const data = event.data as {
         type?: string;
@@ -70,7 +69,7 @@ const signInWithGoogleOnExternalHost = () => {
         };
       };
 
-      if (data?.type !== "authorization_response") return;
+      if (data?.type !== "expense_tracker_google_oauth") return;
 
       const response = data.response;
       if (response?.state !== state) {
