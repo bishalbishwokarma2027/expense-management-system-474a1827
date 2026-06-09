@@ -25,13 +25,16 @@ export default function Auth() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: window.location.origin },
         });
-        if (error) throw error;
-        toast({ title: "Account created!", description: "Please check your email to confirm your account." });
+        if (signUpError) throw signUpError;
+        // Auto sign-in after sign-up (email confirmation disabled)
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError) throw signInError;
+        toast({ title: "Account created!", description: "Welcome aboard." });
       }
     } catch (error: unknown) {
       toast({ title: "Error", description: getErrorMessage(error), variant: "destructive" });
