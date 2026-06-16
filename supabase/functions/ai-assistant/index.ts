@@ -299,6 +299,7 @@ ${recentTx || "No transactions yet."}
             category: args.category,
             description: args.description || args.category,
             date: args.date,
+            user_id: userId,
           });
           if (error) {
             results.push(`Failed to add transaction: ${error.message}`);
