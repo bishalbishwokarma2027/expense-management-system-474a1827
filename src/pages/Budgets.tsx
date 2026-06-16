@@ -79,7 +79,7 @@ export default function Budgets() {
         {categoryData.map((cat, i) => (
           <motion.div
             key={cat.name}
-            initial={{ opacity: 0, y: 10 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.04 }}
             className="glass-card p-4"

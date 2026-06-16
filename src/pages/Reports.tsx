@@ -203,7 +203,7 @@ export default function Reports() {
         ].map((item, i) => (
           <motion.div
             key={item.label}
-            initial={{ opacity: 0, y: 10 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.08 }}
             className="glass-card p-5"
@@ -225,7 +225,7 @@ export default function Reports() {
 
       {/* Quick Insights */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="glass-card p-5">
+        <motion.div initial={false} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="glass-card p-5">
           <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-3">Highest Expense</h3>
           {topExpense ? (
             <div className="flex items-center gap-3">
@@ -240,7 +240,7 @@ export default function Reports() {
             <p className="text-sm text-muted-foreground">No expenses recorded</p>
           )}
         </motion.div>
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="glass-card p-5">
+        <motion.div initial={false} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="glass-card p-5">
           <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-3">Top Income Source</h3>
           {topIncome ? (
             <div className="flex items-center gap-3">
@@ -272,7 +272,7 @@ export default function Reports() {
               return (
                 <motion.div
                   key={c.name}
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={false}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.04 }}
                   className="space-y-1.5"
@@ -316,7 +316,7 @@ export default function Reports() {
               return (
                 <motion.div
                   key={c.name}
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={false}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.04 }}
                   className="space-y-1.5"
@@ -349,7 +349,7 @@ export default function Reports() {
       </div>
 
       {/* Transaction count summary */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="glass-card p-5">
+      <motion.div initial={false} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="glass-card p-5">
         <h2 className="mb-3 font-heading text-sm font-semibold">Period Summary</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
           <div>

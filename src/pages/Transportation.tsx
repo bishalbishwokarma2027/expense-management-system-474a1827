@@ -161,7 +161,7 @@ export default function Transportation() {
 
       {/* Summary Card */}
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={false}
         animate={{ opacity: 1, y: 0 }}
         className="glass-card p-5 flex items-center justify-between"
       >
@@ -199,7 +199,7 @@ export default function Transportation() {
             return (
               <motion.div
                 key={day}
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={false}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: day * 0.01 }}
                 className={`flex items-center gap-2 p-2 rounded-lg border transition-colors ${

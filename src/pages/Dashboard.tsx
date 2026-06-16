@@ -70,7 +70,7 @@ export default function Dashboard() {
 
       {/* Quick insights row */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="glass-card p-4">
+        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="glass-card p-4">
           <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Budget Used</p>
           <div className="flex items-center gap-3">
             <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
@@ -86,7 +86,7 @@ export default function Dashboard() {
           </p>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="glass-card p-4">
+        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="glass-card p-4">
           <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Top Spending</p>
           {topCategory.name ? (
             <div className="flex items-center gap-2">
@@ -101,7 +101,7 @@ export default function Dashboard() {
           )}
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }} className="glass-card p-4">
+        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }} className="glass-card p-4">
           <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Savings Rate</p>
           <div className="flex items-center gap-2">
             {balance >= 0 ? (
