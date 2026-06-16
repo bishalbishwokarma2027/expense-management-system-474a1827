@@ -63,8 +63,13 @@ function mapRow(row: { id: string; type: string; amount: number; category: strin
   };
 }
 
+// Module-level caches so navigating between pages shows data instantly
+// instead of flashing an empty state while the network request resolves.
+let transactionsCache: Transaction[] = [];
+let budgetsCache: Budget[] = [];
+
 export function useTransactions() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>(transactionsCache);
   const { user } = useAuth();
 
   const fetchTransactions = useCallback(async () => {
@@ -75,7 +80,9 @@ export function useTransactions() {
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     if (!error && data) {
-      setTransactions(data.map(mapRow));
+      const mapped = data.map(mapRow);
+      transactionsCache = mapped;
+      setTransactions(mapped);
     }
   }, [user]);
 
