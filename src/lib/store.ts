@@ -134,7 +134,7 @@ export function useTransactions() {
 }
 
 export function useBudgets() {
-  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [budgets, setBudgets] = useState<Budget[]>(budgetsCache);
   const { user } = useAuth();
 
   const fetchBudgets = useCallback(async () => {
@@ -145,14 +145,14 @@ export function useBudgets() {
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     if (!error && data) {
-      setBudgets(
-        data.map((row) => ({
-          id: row.id,
-          category: row.category,
-          limit: Number(row.limit),
-          month: row.month,
-        }))
-      );
+      const mapped = data.map((row) => ({
+        id: row.id,
+        category: row.category,
+        limit: Number(row.limit),
+        month: row.month,
+      }));
+      budgetsCache = mapped;
+      setBudgets(mapped);
     }
   }, [user]);
 
