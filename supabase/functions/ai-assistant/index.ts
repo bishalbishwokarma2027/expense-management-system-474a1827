@@ -91,7 +91,19 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch ALL transactions
+    // Identify the calling user from the JWT so we only read THEIR data
+    const authHeader = req.headers.get("Authorization") || "";
+    const jwt = authHeader.replace("Bearer ", "");
+    const { data: userData, error: userErr } = await supabase.auth.getUser(jwt);
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Not authenticated. Please sign in again." }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userId = userData.user.id;
+    const userEmail = userData.user.email || "";
+
+    // Fetch ONLY this user's transactions
     let allTransactions: any[] = [];
     let offset = 0;
     const pageSize = 1000;
@@ -99,6 +111,7 @@ serve(async (req) => {
       const { data, error } = await supabase
         .from("transactions")
         .select("*")
+        .eq("user_id", userId)
         .order("date", { ascending: false })
         .range(offset, offset + pageSize - 1);
       if (error || !data || data.length === 0) break;
@@ -107,7 +120,7 @@ serve(async (req) => {
       offset += pageSize;
     }
 
-    const { data: budgets } = await supabase.from("budgets").select("*");
+    const { data: budgets } = await supabase.from("budgets").select("*").eq("user_id", userId);
 
     const today = new Date();
     const todayStr = today.toISOString().split("T")[0];
@@ -286,6 +299,7 @@ ${recentTx || "No transactions yet."}
             category: args.category,
             description: args.description || args.category,
             date: args.date,
+            user_id: userId,
           });
           if (error) {
             results.push(`Failed to add transaction: ${error.message}`);
