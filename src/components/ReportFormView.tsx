@@ -62,7 +62,7 @@ export default function ReportFormView({ transactions, periodLabel, showNepaliDa
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={false}
       animate={{ opacity: 1, y: 0 }}
       drag
       dragMomentum={false}

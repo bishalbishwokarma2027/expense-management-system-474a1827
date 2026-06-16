@@ -38,7 +38,7 @@ export default function RecentTransactions({ limit, showDelete = false, transact
           return (
             <motion.div
               key={t.id}
-              initial={{ opacity: 0, x: -10 }}
+              initial={false}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.03 }}
               className="flex items-center gap-3 rounded-lg p-3 transition-colors hover:bg-accent/50 group"
