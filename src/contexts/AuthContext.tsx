@@ -24,7 +24,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const purgeLocalAuth = () => {
+      try {
+        Object.keys(localStorage)
+          .filter((k) => k.startsWith("sb-") && k.endsWith("-auth-token"))
+          .forEach((k) => localStorage.removeItem(k));
+      } catch {}
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "TOKEN_REFRESHED" && !session) purgeLocalAuth();
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -32,7 +41,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (error) {
-        await supabase.auth.signOut({ scope: "local" });
+        // Stale/invalid refresh token (common after 7+ days) — purge so sign-in works
+        purgeLocalAuth();
+        await supabase.auth.signOut({ scope: "local" }).catch(() => {});
         setSession(null);
         setUser(null);
       } else {
