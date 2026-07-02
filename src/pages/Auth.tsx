@@ -21,6 +21,14 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
     try {
+      // Purge any stale local session (fixes sign-in/up failing after long inactivity)
+      try {
+        Object.keys(localStorage)
+          .filter((k) => k.startsWith("sb-") && k.endsWith("-auth-token"))
+          .forEach((k) => localStorage.removeItem(k));
+        await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+      } catch {}
+
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
